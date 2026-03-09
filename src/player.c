@@ -36,10 +36,10 @@ void player_init(void) {
 }
 
 void player_update(uint8_t input) {
-    if (input & J_LEFT)  px = clamp_u8(px - 1u, PX_MIN, PX_MAX);
-    if (input & J_RIGHT) px = clamp_u8(px + 1u, PX_MIN, PX_MAX);
-    if (input & J_UP)    py = clamp_u8(py - 1u, PY_MIN, PY_MAX);
-    if (input & J_DOWN)  py = clamp_u8(py + 1u, PY_MIN, PY_MAX);
+    if (input & J_LEFT)  px = clamp_u8((uint8_t)(px - 1u), PX_MIN, PX_MAX);
+    if (input & J_RIGHT) px = clamp_u8((uint8_t)(px + 1u), PX_MIN, PX_MAX);
+    if (input & J_UP)    py = clamp_u8((uint8_t)(py - 1u), PY_MIN, PY_MAX);
+    if (input & J_DOWN)  py = clamp_u8((uint8_t)(py + 1u), PY_MIN, PY_MAX);
 }
 
 void player_render(void) {
