@@ -1,10 +1,16 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
+import cairo  # registers cairo.Context as a GI foreign type (requires python3-gi-cairo)
 
 ZOOM = 8
 _W = 32  # canvas pixel width
 _H = 32  # canvas pixel height
+
+PALETTE_PRESETS = {
+    'Gray': [(0, 0, 0), (10, 10, 10), (21, 21, 21), (31, 31, 31)],
+    'GBC':  [(0, 0, 0), (28,  4,  4), (28, 20,  0), (31, 31, 31)],
+}
 
 
 class TileCanvas(Gtk.DrawingArea):
@@ -27,14 +33,8 @@ class TileCanvas(Gtk.DrawingArea):
         for y in range(_H):
             for x in range(_W):
                 idx = self.model.get_pixel(x, y)
-                if idx == 0:
-                    # Transparent: checkerboard
-                    light = ((x + y) % 2 == 0)
-                    v = 0.75 if light else 0.55
-                    cr.set_source_rgb(v, v, v)
-                else:
-                    r8, g8, b8 = self.model.palette.get_color_rgb888(idx)
-                    cr.set_source_rgb(r8 / 255, g8 / 255, b8 / 255)
+                r8, g8, b8 = self.model.palette.get_color_rgb888(idx)
+                cr.set_source_rgb(r8 / 255, g8 / 255, b8 / 255)
                 cr.rectangle(x * ZOOM, y * ZOOM, ZOOM, ZOOM)
                 cr.fill()
 
@@ -67,35 +67,68 @@ class TileCanvas(Gtk.DrawingArea):
 
 
 class PalettePanel(Gtk.Box):
-    """Vertical panel: 4 color buttons + RGB sliders for the active color."""
+    """Vertical panel: preset buttons, 4 colour swatches, RGB sliders."""
 
     def __init__(self, model, canvas):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.set_border_width(6)
         self.model = model
         self.canvas = canvas
         self.active_index = 0
         self._build()
 
     def _build(self):
-        lbl = Gtk.Label(label='<b>Palette</b>', use_markup=True)
-        self.pack_start(lbl, False, False, 0)
+        # ── Title ────────────────────────────────────────────────────────────
+        self.pack_start(
+            Gtk.Label(label='<b>Palette</b>', use_markup=True),
+            False, False, 0)
 
+        # ── Preset buttons ───────────────────────────────────────────────────
+        preset_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        for name in PALETTE_PRESETS:
+            btn = Gtk.Button(label=name)
+            btn.connect('clicked', self._apply_preset, name)
+            preset_row.pack_start(btn, True, True, 0)
+        self.pack_start(preset_row, False, False, 0)
+
+        self.pack_start(
+            Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+            False, False, 0)
+
+        # ── 4 equal colour swatches in a row ─────────────────────────────────
+        swatch_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.color_buttons = []
         for i in range(4):
-            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            btn = Gtk.Button()
-            btn.set_size_request(36, 36)
+            btn = Gtk.Button(label=str(i))
+            btn.set_size_request(48, 48)
             btn.connect('clicked', self._select_color, i)
             self.color_buttons.append(btn)
-            row.pack_start(btn, False, False, 0)
-            if i == 0:
-                row.pack_start(Gtk.Label(label='(transparent)'), False, False, 0)
-            self.pack_start(row, False, False, 0)
+            swatch_row.pack_start(btn, True, True, 0)
             self._refresh_button(i)
+        self.pack_start(swatch_row, False, False, 0)
 
-        # RGB sliders
-        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        self.pack_start(sep, False, False, 4)
+        # Small note about index 0
+        note = Gtk.Label(label='<small><i>Color 0 = transparent for sprites (GBC hardware)</i></small>',
+                         use_markup=True)
+        note.set_halign(Gtk.Align.START)
+        self.pack_start(note, False, False, 0)
+
+        self.pack_start(
+            Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+            False, False, 0)
+
+        # ── Active colour label ──────────────────────────────────────────────
+        self._active_lbl = Gtk.Label(label='Editing color 0 (0–31 per channel)')
+        self._active_lbl.set_halign(Gtk.Align.START)
+        self.pack_start(self._active_lbl, False, False, 0)
+
+        # ── RGB sliders ──────────────────────────────────────────────────────
+        self._linking = False  # guard against recursive slider updates
+
+        link_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        self._link_btn = Gtk.CheckButton(label='Link R=G=B (greyscale)')
+        link_row.pack_start(self._link_btn, False, False, 0)
+        self.pack_start(link_row, False, False, 0)
 
         self.sliders = {}
         for ch in ('R', 'G', 'B'):
@@ -116,9 +149,21 @@ class PalettePanel(Gtk.Box):
         self._load_sliders()
         self._highlight_active()
 
+    # ── Preset ────────────────────────────────────────────────────────────────
+
+    def _apply_preset(self, btn, name):
+        for i, (r5, g5, b5) in enumerate(PALETTE_PRESETS[name]):
+            self.model.palette.set_color(i, r5, g5, b5)
+            self._refresh_button(i)
+        self._load_sliders()
+        self.canvas.queue_draw()
+
+    # ── Colour selection ──────────────────────────────────────────────────────
+
     def _select_color(self, btn, index):
         self.active_index = index
         self.canvas.active_color = index
+        self._active_lbl.set_text(f'Editing color {index} (0–31 per channel)')
         self._load_sliders()
         self._highlight_active()
 
@@ -129,14 +174,23 @@ class PalettePanel(Gtk.Box):
         self.sliders['B'].set_value(b5)
 
     def _on_slider(self, scale, channel):
+        if self._linking:
+            return
         val = int(scale.get_value())
-        r5, g5, b5 = self.model.palette.colors[self.active_index]
-        if channel == 'R':
-            r5 = val
-        elif channel == 'G':
-            g5 = val
+        if self._link_btn.get_active():
+            self._linking = True
+            for s in self.sliders.values():
+                s.set_value(val)
+            self._linking = False
+            r5 = g5 = b5 = val
         else:
-            b5 = val
+            r5, g5, b5 = self.model.palette.colors[self.active_index]
+            if channel == 'R':
+                r5 = val
+            elif channel == 'G':
+                g5 = val
+            else:
+                b5 = val
         self.model.palette.set_color(self.active_index, r5, g5, b5)
         self._refresh_button(self.active_index)
         self.canvas.queue_draw()
@@ -149,8 +203,11 @@ class PalettePanel(Gtk.Box):
 
     def _highlight_active(self):
         for i, btn in enumerate(self.color_buttons):
-            relief = Gtk.ReliefStyle.NONE if i == self.active_index else Gtk.ReliefStyle.NORMAL
-            btn.set_relief(relief)
+            ctx = btn.get_style_context()
+            if i == self.active_index:
+                ctx.add_class('suggested-action')
+            else:
+                ctx.remove_class('suggested-action')
 
 
 class MainWindow(Gtk.Window):
