@@ -26,13 +26,13 @@ static const char mc2_0[] = "Thanks";
 static const char mc2_1[] = "Tell me more";
 
 static const DialogNode mechanic_nodes[] = {
-    /* 0 */ { m0, 0, {NULL,   NULL,   NULL}, {1,          0xFFu, 0xFFu} },
-    /* 1 */ { m1, 2, {mc1_0,  mc1_1,  NULL}, {2,          3,     0xFFu} },
-    /* 2 */ { m2, 2, {mc2_0,  mc2_1,  NULL}, {4,          5,     0xFFu} },
-    /* 3 */ { m3, 0, {NULL,   NULL,   NULL}, {6,          0xFFu, 0xFFu} },
-    /* 4 */ { m4, 0, {NULL,   NULL,   NULL}, {DIALOG_END, 0xFFu, 0xFFu} },
-    /* 5 */ { m5, 0, {NULL,   NULL,   NULL}, {DIALOG_END, 0xFFu, 0xFFu} },
-    /* 6 */ { m6, 0, {NULL,   NULL,   NULL}, {DIALOG_END, 0xFFu, 0xFFu} },
+    /* 0 */ { m0, 0, {NULL,   NULL,   NULL}, {1,          DIALOG_END, DIALOG_END} },
+    /* 1 */ { m1, 2, {mc1_0,  mc1_1,  NULL}, {2,          3,          DIALOG_END} },
+    /* 2 */ { m2, 2, {mc2_0,  mc2_1,  NULL}, {4,          5,          DIALOG_END} },
+    /* 3 */ { m3, 0, {NULL,   NULL,   NULL}, {6,          DIALOG_END, DIALOG_END} },
+    /* 4 */ { m4, 0, {NULL,   NULL,   NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
+    /* 5 */ { m5, 0, {NULL,   NULL,   NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
+    /* 6 */ { m6, 0, {NULL,   NULL,   NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
 };
 
 /* --- NPC dialog table (indexed by npc_id) ------------------------------- */
