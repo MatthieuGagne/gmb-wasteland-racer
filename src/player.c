@@ -51,7 +51,7 @@ void player_update(uint8_t input) {
     }
     if (input & J_DOWN) {
         new_py = py + 1;
-        if (new_py <= (int16_t)cam_y + 143 && corners_passable(px, new_py)) py = new_py;
+        if (new_py <= (int16_t)(cam_y + 143u) && corners_passable(px, new_py)) py = new_py;
     }
 }
 
