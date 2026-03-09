@@ -1,0 +1,75 @@
+#include <gb/gb.h>
+#include <gb/cgb.h>
+#include <gbdk/console.h>
+
+typedef enum {
+    STATE_INIT,
+    STATE_TITLE,
+    STATE_PLAYING,
+    STATE_GAME_OVER
+} GameState;
+
+static GameState state = STATE_INIT;
+
+static void init_palettes(void) {
+    if (_cpu == CGB_TYPE) {
+        /* Default 4-shade greyscale palette for GBC mode */
+        set_bkg_palette(0, 1, (const uint16_t[]){
+            RGB(31, 31, 31),  /* white  */
+            RGB(20, 20, 20),  /* light  */
+            RGB(10, 10, 10),  /* dark   */
+            RGB(0,  0,  0)    /* black  */
+        });
+        set_sprite_palette(0, 1, (const uint16_t[]){
+            RGB(31, 31, 31),
+            RGB(20, 20, 20),
+            RGB(10, 10, 10),
+            RGB(0,  0,  0)
+        });
+    }
+}
+
+static void show_title(void) {
+    cls();
+    gotoxy(2, 6);
+    printf("WASTELAND RACER");
+    gotoxy(3, 10);
+    printf("Press START");
+    state = STATE_TITLE;
+}
+
+void main(void) {
+    DISPLAY_OFF;
+
+    init_palettes();
+
+    DISPLAY_ON;
+
+    show_title();
+
+    while (1) {
+        wait_vbl_done();
+
+        switch (state) {
+            case STATE_TITLE:
+                if (joypad() & J_START) {
+                    cls();
+                    gotoxy(4, 9);
+                    printf("PLAYING...");
+                    state = STATE_PLAYING;
+                }
+                break;
+
+            case STATE_PLAYING:
+                /* TODO: game logic */
+                break;
+
+            case STATE_GAME_OVER:
+                /* TODO: game over screen */
+                break;
+
+            default:
+                break;
+        }
+    }
+}

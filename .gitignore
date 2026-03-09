@@ -1,0 +1,35 @@
+# Build output
+build/
+*.o
+*.lst
+*.map
+*.sym
+*.ihx
+
+# ROM files
+*.gb
+*.gbc
+
+# Save files
+*.sav
+*.srm
+
+# GBTD / GBMB project files
+*.gbr
+*.gbm
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Linux
+*~
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
