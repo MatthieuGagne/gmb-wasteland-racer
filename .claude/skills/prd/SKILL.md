@@ -9,31 +9,23 @@ Create a new PRD as a GitHub issue.
 
 1. **Draft the PRD content** from the brainstorming session. Use this structure:
 
-```markdown
+```
 ## Goal
-
 One sentence: what this feature does and why it matters for the game.
 
 ## Requirements
-
 - R1: ...
-- R2: ...
 
 ## Acceptance Criteria
-
 - [ ] AC1: ...
-- [ ] AC2: ...
 
 ## Out of Scope
-
 - ...
 
 ## Files Impacted
-
 - `src/foo.c` — ...
 
 ## Notes
-
 <!-- Design decisions, open questions, references -->
 ```
 
