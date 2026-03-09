@@ -56,9 +56,9 @@ void test_player_update_clamps_at_left_boundary(void) {
 }
 
 void test_player_update_clamps_at_right_boundary(void) {
-    player_set_pos(167, 72);
+    player_set_pos(160, 72);
     player_update(J_RIGHT);
-    TEST_ASSERT_EQUAL_UINT8(167, player_get_x());
+    TEST_ASSERT_EQUAL_UINT8(160, player_get_x());
 }
 
 void test_player_update_clamps_at_top_boundary(void) {
@@ -68,9 +68,9 @@ void test_player_update_clamps_at_top_boundary(void) {
 }
 
 void test_player_update_clamps_at_bottom_boundary(void) {
-    player_set_pos(80, 159);
+    player_set_pos(80, 152);
     player_update(J_DOWN);
-    TEST_ASSERT_EQUAL_UINT8(159, player_get_y());
+    TEST_ASSERT_EQUAL_UINT8(152, player_get_y());
 }
 
 /* runner ------------------------------------------------------------ */
