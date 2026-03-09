@@ -80,10 +80,10 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 This project uses [Superpowers](https://github.com/obra/superpowers) (installed globally in `~/.claude/`).
 
-**Outer loop:** brainstorming → PRD (`/prd`) → writing-plans → subagent-driven-development
+**Outer loop:** brainstorming → PRD (`/prd`) → [separate session] writing-plans → subagent-driven-development
 **TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill)
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
-**PRDs:** saved to `docs/prd/YYYY-MM-DD-<topic>.md`
+**PRDs:** GitHub issues only — no local files. Use `/prd` skill.
 **Design docs & plans:** saved to `docs/plans/YYYY-MM-DD-<topic>-design.md`
 
 **Smoketest gate:** NEVER commit or create a PR before the user has confirmed a smoketest in the emulator (`mgba-qt build/wasteland-racer.gb`). Always ask and wait for confirmation.
