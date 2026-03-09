@@ -13,13 +13,15 @@ Create a new PRD and its linked GitHub issue.
    - Leave `**Issue:**` blank for now.
    - Slug: lowercase, hyphens only, short (e.g. `enemy-spawning`, `hud-health-bar`).
 
-2. **Create a GitHub issue**:
+2. **Create a GitHub issue** with the full PRD content as the body:
    ```sh
-   gh issue create --title "feat: <feature name>" \
-     --body "PRD: docs/prd/YYYY-MM-DD-<feature-slug>-prd.md"
+   gh issue create --title "feat: <feature name>" --body "$(cat docs/prd/YYYY-MM-DD-<feature-slug>-prd.md)"
    ```
    Capture the issue number from the URL in the output.
 
-3. **Update the PRD** — set `**Issue:** #N` with the captured number.
+3. **Update the PRD** — set `**Issue:** #N` with the captured number. Then edit the issue to include the updated issue number:
+   ```sh
+   gh issue edit N --body "$(cat docs/prd/YYYY-MM-DD-<feature-slug>-prd.md)"
+   ```
 
 4. Report the PRD path and issue URL to the user.
