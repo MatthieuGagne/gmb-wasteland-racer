@@ -41,6 +41,10 @@ To target GBC-only (access extra VRAM bank, 8 BG/OBJ palettes): swap `-Wm-yc` fo
 - All VRAM writes must occur during VBlank; use `wait_vbl_done()` or a VBlank ISR.
 - Warning "conditional flow changed by optimizer: so said EVELYN" is harmless.
 
+## Git & GitHub
+
+Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git` if push fails due to missing credentials.
+
 ## Specialized Agents
 
 - **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, MBC banking, compilation errors.
