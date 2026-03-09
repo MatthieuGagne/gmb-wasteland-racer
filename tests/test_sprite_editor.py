@@ -1,8 +1,43 @@
 import unittest
+import tempfile
+import os
 
-class TestPlaceholder(unittest.TestCase):
-    def test_placeholder(self):
-        self.assertTrue(True)
+from tools.sprite_editor.model import Palette
+
+
+class TestPalette(unittest.TestCase):
+
+    def test_default_has_4_colors(self):
+        p = Palette()
+        self.assertEqual(len(p.colors), 4)
+
+    def test_set_color_stores_5bit_rgb(self):
+        p = Palette()
+        p.set_color(1, 31, 0, 15)
+        self.assertEqual(p.colors[1], (31, 0, 15))
+
+    def test_get_color_rgb888_max_red(self):
+        p = Palette()
+        p.set_color(0, 31, 0, 0)
+        r, g, b = p.get_color_rgb888(0)
+        self.assertEqual(r, 255)
+        self.assertEqual(g, 0)
+        self.assertEqual(b, 0)
+
+    def test_get_color_rgb888_zero_is_black(self):
+        p = Palette()
+        p.set_color(0, 0, 0, 0)
+        self.assertEqual(p.get_color_rgb888(0), (0, 0, 0))
+
+    def test_get_color_rgb888_mid_value(self):
+        # 20 * 255 // 31 = 164
+        p = Palette()
+        p.set_color(2, 20, 10, 5)
+        r, g, b = p.get_color_rgb888(2)
+        self.assertEqual(r, (20 * 255) // 31)
+        self.assertEqual(g, (10 * 255) // 31)
+        self.assertEqual(b, (5 * 255) // 31)
+
 
 if __name__ == '__main__':
     unittest.main()
