@@ -83,8 +83,7 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 **Outer loop:** brainstorming → PRD (`/prd`) → [separate session] writing-plans → subagent-driven-development
 **TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill)
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
-**PRDs:** GitHub issues only — no local files. Use `/prd` skill.
-**Design docs & plans:** saved to `docs/plans/YYYY-MM-DD-<topic>-design.md`
+**PRDs & design docs:** GitHub issues only — no local files. Use `/prd` skill.
 
 **Smoketest gate:** NEVER commit or create a PR before the user has confirmed a smoketest in the emulator (`mgba-qt build/wasteland-racer.gb`). Always ask and wait for confirmation.
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.

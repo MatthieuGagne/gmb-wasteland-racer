@@ -58,5 +58,6 @@ static inline void set_bkg_tiles(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
                                   const uint8_t *tiles) {
     (void)x; (void)y; (void)w; (void)h; (void)tiles;
 }
+static inline void move_bkg(uint8_t x, uint8_t y) { (void)x; (void)y; }
 
 #endif /* MOCK_GB_H */

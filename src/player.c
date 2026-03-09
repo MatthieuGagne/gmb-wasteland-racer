@@ -1,30 +1,28 @@
 #include <gb/gb.h>
 #include "player.h"
 #include "track.h"
+#include "camera.h"
 
-/* Solid 8x8 tile: all pixels color index 3 (GBDK 2bpp planar: low plane | high plane per row) */
+/* Solid 8x8 sprite: all pixels color index 3 */
 static const uint8_t player_tile_data[] = {
-    0xFF, 0xFF,   /* row 0 */
-    0xFF, 0xFF,   /* row 1 */
-    0xFF, 0xFF,   /* row 2 */
-    0xFF, 0xFF,   /* row 3 */
-    0xFF, 0xFF,   /* row 4 */
-    0xFF, 0xFF,   /* row 5 */
-    0xFF, 0xFF,   /* row 6 */
-    0xFF, 0xFF    /* row 7 */
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
 };
 
-/* Screen bounds — GB sprite hardware: x+8 offset, y+16 offset */
-#define PX_MIN  8u
-#define PX_MAX  160u  /* sprite right edge at screen x=159: (160-8)+7=159 */
-#define PY_MIN  16u
-#define PY_MAX  152u  /* sprite bottom edge at screen y=143: (152-16)+7=143 */
+/* Player start: bottom straight center — world (160, 256) = tile (20, 32) */
+#define PLAYER_START_X  160
+#define PLAYER_START_Y  256
 
-#define PLAYER_START_X  88u   /* on track: screen (80,108) = tile (10,13) */
-#define PLAYER_START_Y  124u
+static int16_t px;
+static int16_t py;
 
-static uint8_t px;
-static uint8_t py;
+/* Returns 1 if all 4 corners of a player at world (wx, wy) are on track. */
+static uint8_t corners_passable(int16_t wx, int16_t wy) {
+    return track_passable(wx,       wy) &&
+           track_passable(wx + 7,   wy) &&
+           track_passable(wx,       wy + 7) &&
+           track_passable(wx + 7,   wy + 7);
+}
 
 /* Returns 1 if all 4 corners of a sprite at (hw_px, hw_py) are on driveable track */
 static uint8_t corners_passable(uint8_t hw_px, uint8_t hw_py) {
@@ -46,32 +44,37 @@ void player_init(void) {
 }
 
 void player_update(uint8_t input) {
+    int16_t new_px;
+    int16_t new_py;
     if (input & J_LEFT) {
-        uint8_t new_px = clamp_u8((uint8_t)(px - 1u), PX_MIN, PX_MAX);
+        new_px = px - 1;
         if (corners_passable(new_px, py)) px = new_px;
     }
     if (input & J_RIGHT) {
-        uint8_t new_px = clamp_u8((uint8_t)(px + 1u), PX_MIN, PX_MAX);
+        new_px = px + 1;
         if (corners_passable(new_px, py)) px = new_px;
     }
     if (input & J_UP) {
-        uint8_t new_py = clamp_u8((uint8_t)(py - 1u), PY_MIN, PY_MAX);
+        new_py = py - 1;
         if (corners_passable(px, new_py)) py = new_py;
     }
     if (input & J_DOWN) {
-        uint8_t new_py = clamp_u8((uint8_t)(py + 1u), PY_MIN, PY_MAX);
+        new_py = py + 1;
         if (corners_passable(px, new_py)) py = new_py;
     }
 }
 
 void player_render(void) {
-    move_sprite(0, px, py);
+    /* hw coords = world coords - camera scroll + GB sprite hardware offsets */
+    uint8_t hw_x = (uint8_t)(px - (int16_t)cam_x + 8);
+    uint8_t hw_y = (uint8_t)(py - (int16_t)cam_y + 16);
+    move_sprite(0, hw_x, hw_y);
 }
 
-void player_set_pos(uint8_t x, uint8_t y) {
+void player_set_pos(int16_t x, int16_t y) {
     px = x;
     py = y;
 }
 
-uint8_t player_get_x(void) { return px; }
-uint8_t player_get_y(void) { return py; }
+int16_t player_get_x(void) { return px; }
+int16_t player_get_y(void) { return py; }
