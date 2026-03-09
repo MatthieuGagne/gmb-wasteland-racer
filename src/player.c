@@ -15,9 +15,9 @@ static const uint8_t player_tile_data[] = {
 
 /* Screen bounds — GB sprite hardware: x+8 offset, y+16 offset */
 #define PX_MIN  8u
-#define PX_MAX  167u
+#define PX_MAX  160u  /* sprite right edge at screen x=159: (160-8)+7=159 */
 #define PY_MIN  16u
-#define PY_MAX  159u
+#define PY_MAX  152u  /* sprite bottom edge at screen y=143: (152-16)+7=143 */
 
 #define PLAYER_START_X  80u
 #define PLAYER_START_Y  72u
