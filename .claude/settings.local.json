@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(xargs ls:*)",
+      "Bash(make:*)",
+      "Read(//opt/gbdk/**)",
+      "Read(//opt/**)",
+      "Bash(gh auth:*)",
+      "Bash(wget:*)",
+      "Bash(sudo tar:*)",
+      "Bash(mkdir:*)",
+      "Bash(tar -xzf /tmp/gbdk-linux64.tar.gz -C /home/mathdaman/)",
+      "Read(//home/mathdaman/gbdk/**)",
+      "Read(//home/mathdaman/**)",
+      "Bash(GBDK_HOME=/home/mathdaman/gbdk make:*)",
+      "Bash(gh repo:*)",
+      "Bash(code:*)",
+      "WebSearch"
+    ]
+  }
+}
