@@ -24,15 +24,6 @@ static uint8_t corners_passable(int16_t wx, int16_t wy) {
            track_passable(wx + 7,   wy + 7);
 }
 
-/* Returns 1 if all 4 corners of a sprite at (hw_px, hw_py) are on driveable track */
-static uint8_t corners_passable(uint8_t hw_px, uint8_t hw_py) {
-    uint8_t sx = (uint8_t)(hw_px - 8u);
-    uint8_t sy = (uint8_t)(hw_py - 16u);
-    return track_passable(sx, sy) &&
-           track_passable((uint8_t)(sx + 7u), sy) &&
-           track_passable(sx, (uint8_t)(sy + 7u)) &&
-           track_passable((uint8_t)(sx + 7u), (uint8_t)(sy + 7u));
-}
 
 void player_init(void) {
     SPRITES_8x8;
