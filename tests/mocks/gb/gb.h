@@ -35,8 +35,8 @@ static inline uint8_t joypad(void) { return 0; }
 #define SHOW_SPRITES ((void)0)
 
 /* Sprite functions */
-static inline void set_sprite_tile_data(uint8_t first_tile, uint8_t nb_tiles,
-                                         const uint8_t *data) {
+static inline void set_sprite_data(uint8_t first_tile, uint8_t nb_tiles,
+                                    const uint8_t *data) {
     (void)first_tile; (void)nb_tiles; (void)data;
 }
 static inline void set_sprite_tile(uint8_t nb, uint8_t tile) {
