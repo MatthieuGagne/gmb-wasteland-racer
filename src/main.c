@@ -70,7 +70,7 @@ void main(void) {
                 /* VBlank phase: all VRAM writes immediately after wait_vbl_done() */
                 player_render();
                 camera_flush_vram();
-                move_bkg(cam_x, cam_y);
+                move_bkg(0u, (uint8_t)cam_y);
                 /* Game logic phase: runs during active display */
                 player_update(joypad());
                 camera_update(player_get_x(), player_get_y());

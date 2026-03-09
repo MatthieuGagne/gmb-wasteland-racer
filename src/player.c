@@ -57,7 +57,7 @@ void player_update(uint8_t input) {
 
 void player_render(void) {
     /* hw coords = world coords - camera scroll + GB sprite hardware offsets */
-    uint8_t hw_x = (uint8_t)(px - (int16_t)cam_x + 8);
+    uint8_t hw_x = (uint8_t)(px + 8);  /* cam_x always 0 — no horizontal scroll */
     uint8_t hw_y = (uint8_t)(py - (int16_t)cam_y + 16);
     move_sprite(0, hw_x, hw_y);
 }
