@@ -67,6 +67,7 @@ static inline void set_win_tiles(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
 
 /* Mock VRAM: 32x32 tile BG map, shared across TUs via mock_bkg.c */
 extern uint8_t mock_vram[32u * 32u];
+extern int mock_set_bkg_tiles_call_count;
 void mock_vram_clear(void);
 void set_bkg_tiles(uint8_t x, uint8_t y, uint8_t w, uint8_t h,
                    const uint8_t *tiles);

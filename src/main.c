@@ -62,17 +62,18 @@ void main(void) {
                 if (joypad() & J_START) {
                     track_init();
                     camera_init(player_get_x(), player_get_y());
-                    /* Debug coord overlay at bottom of screen */
-                    move_win(7, 136);
-                    SHOW_WIN;
                     state = STATE_PLAYING;
                 }
                 break;
 
             case STATE_PLAYING:
+                /* VBlank phase: all VRAM writes immediately after wait_vbl_done() */
+                player_render();
+                camera_flush_vram();
+                move_bkg(cam_x, cam_y);
+                /* Game logic phase: runs during active display */
                 player_update(joypad());
                 camera_update(player_get_x(), player_get_y());
-                player_render();
                 break;
 
             case STATE_GAME_OVER:
