@@ -12,7 +12,8 @@ OBJS      := $(patsubst src/%.c,$(OBJ_DIR)/%.o,$(SRCS))
 
 UNITY_SRC  := tests/unity/src/unity.c
 TEST_SRCS  := $(wildcard tests/test_*.c)
-TEST_FLAGS := -Itests/mocks -Itests/unity/src -Wall -Wextra
+TEST_FLAGS   := -Itests/mocks -Itests/unity/src -Isrc -Wall -Wextra
+TEST_LIB_SRC := $(filter-out src/main.c,$(wildcard src/*.c))
 
 .PHONY: all clean test
 
@@ -34,7 +35,7 @@ test: $(TEST_SRCS) | build
 	@for f in $(TEST_SRCS); do \
 		name=$$(basename $$f .c); \
 		echo "  CC  $$f"; \
-		gcc $(TEST_FLAGS) $(UNITY_SRC) $$f -o build/$$name || exit 1; \
+		gcc $(TEST_FLAGS) $(UNITY_SRC) $(TEST_LIB_SRC) $$f -o build/$$name || exit 1; \
 		echo "  RUN build/$$name"; \
 		./build/$$name || exit 1; \
 	done
