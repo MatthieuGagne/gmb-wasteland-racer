@@ -3,9 +3,7 @@
 #include "config.h"
 #include "input.h"
 
-/* Provide definitions for input globals (main.c excluded from test build) */
-uint8_t input     = 0;
-uint8_t prev_input = 0;
+/* input and prev_input defined by tests/mocks/input_globals.c */
 
 /* Helper: simulate a single button tick (rising edge only) */
 static void tick(uint8_t btn) {
