@@ -61,7 +61,7 @@ class TestGidToTileId(unittest.TestCase):
 **Step 3: Run tests to verify they fail**
 
 ```bash
-python3 -m pytest tests/test_tmx_to_c.py::TestGidToTileId -v
+python3 -m unittest tests.test_tmx_to_c.TestGidToTileId -v
 ```
 
 Expected: `ERROR` — `ImportError: cannot import name 'gid_to_tile_id'`
@@ -115,7 +115,7 @@ With:
 **Step 3: Run unit tests — expect PASS**
 
 ```bash
-python3 -m pytest tests/test_tmx_to_c.py::TestGidToTileId -v
+python3 -m unittest tests.test_tmx_to_c.TestGidToTileId -v
 ```
 
 Expected: all 6 tests `PASSED`
@@ -123,7 +123,7 @@ Expected: all 6 tests `PASSED`
 **Step 4: Run full test suite — existing tests must still pass**
 
 ```bash
-python3 -m pytest tests/test_tmx_to_c.py -v
+python3 -m unittest discover -s tests -p "test_tmx_to_c.py" -v
 ```
 
 Expected: all tests `PASSED`
@@ -232,7 +232,7 @@ class TestGidIntegration(unittest.TestCase):
 **Step 3: Run integration tests**
 
 ```bash
-python3 -m pytest tests/test_tmx_to_c.py::TestGidIntegration -v
+python3 -m unittest tests.test_tmx_to_c.TestGidIntegration -v
 ```
 
 Expected: all 3 tests `PASSED`
@@ -240,7 +240,7 @@ Expected: all 3 tests `PASSED`
 **Step 4: Run full suite one more time**
 
 ```bash
-python3 -m pytest tests/test_tmx_to_c.py -v
+python3 -m unittest discover -s tests -p "test_tmx_to_c.py" -v
 ```
 
 Expected: all tests `PASSED`
@@ -327,7 +327,7 @@ Fixes #41.
 - Update tiled-expert skill with corrected code pattern and new pitfall rows
 
 ## Test plan
-- [ ] `python3 -m pytest tests/test_tmx_to_c.py -v` — all tests pass
+- [ ] `python3 -m unittest discover -s tests -p "test_tmx_to_c.py" -v` — all tests pass
 - [ ] Manually verify `python3 tools/tmx_to_c.py assets/maps/track.tmx /tmp/out.c` produces correct output
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
