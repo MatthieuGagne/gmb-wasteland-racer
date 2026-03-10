@@ -303,6 +303,7 @@ void decode_tile(uint32_t gid, uint32_t *raw_gid_out, int *flip_h, int *flip_v) 
 | Assuming tileset is embedded | Check for `source` field; load external `.tsj`/`.tsx` separately |
 | Tile index formula wrong | `tile[y * layer_width + x]` — use layer `width`, not map `width` |
 | Parsing base64 as string | It's binary data: base64 → bytes → uint32 little-endian array |
+| `encoding: "csv"` → expecting a string | **CSV in JSON is a JSON array of integers**, not a comma-separated string. Only base64 produces a string. |
 | Object `type` vs `class` | Pre-1.9: `type` field. Since 1.9: `class` field. Check both. |
 
 ---
