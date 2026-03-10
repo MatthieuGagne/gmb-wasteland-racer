@@ -18,4 +18,8 @@
 
 #define HUD_SCANLINE 128  /* LYC fires here: 2-tile HUD = 16px at bottom, scanline 128 is first HUD line */
 
+/* Terrain physics modifiers */
+#define TERRAIN_SAND_FRICTION_MUL  2u   /* friction steps applied on sand (double) */
+#define TERRAIN_BOOST_DELTA        2u   /* vy kick per frame on boost pad */
+
 #endif /* CONFIG_H */
