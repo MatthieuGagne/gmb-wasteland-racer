@@ -1,6 +1,9 @@
+#pragma bank 255
 #include <gb/gb.h>
 #include "input.h"
 #include "player.h"
+#include "banking.h"
+BANKREF_EXTERN(player_tile_data)
 #include "track.h"
 #include "camera.h"
 #include "debug.h"
@@ -26,22 +29,26 @@ static uint8_t corners_passable(int16_t wx, int16_t wy) {
 }
 
 
-void player_init(void) {
+void player_init(void) BANKED {
     SPRITES_8x8;
     sprite_pool_init();
     player_sprite_slot     = get_sprite();  /* OAM slot for top half    */
     player_sprite_slot_bot = get_sprite();  /* OAM slot for bottom half */
-    set_sprite_data(0, 2, player_tile_data); /* load 2 tiles (32 bytes)  */
+    { SET_BANK(player_tile_data);
+      set_sprite_data(0, 2, player_tile_data);
+      RESTORE_BANK(); }
     set_sprite_tile(player_sprite_slot,     0); /* top    half = tile 0 */
     set_sprite_tile(player_sprite_slot_bot, 1); /* bottom half = tile 1 */
-    px = track_start_x;
-    py = track_start_y;
+    { SET_BANK(track_start_x);
+      px = track_start_x;
+      py = track_start_y;
+      RESTORE_BANK(); }
     vx = 0;
     vy = 0;
     SHOW_SPRITES;
 }
 
-void player_update(void) {
+void player_update(void) BANKED {
     int16_t new_px;
     int16_t new_py;
     TileType terrain;
@@ -67,7 +74,7 @@ void player_update(void) {
     }
 }
 
-void player_render(void) {
+void player_render(void) BANKED {
     /* cam_x is always 0; cam_y is uint16_t but py >= cam_y is enforced so offset fits uint8_t */
     uint8_t hw_x = (uint8_t)(px + 8);
     uint8_t hw_y = (uint8_t)((int16_t)py - (int16_t)cam_y + 16);
@@ -80,22 +87,22 @@ void player_render(void) {
     }
 }
 
-void player_set_pos(int16_t x, int16_t y) {
+void player_set_pos(int16_t x, int16_t y) BANKED {
     px = x;
     py = y;
 }
 
-int16_t player_get_x(void)  { return px; }
-int16_t player_get_y(void)  { return py; }
-int8_t  player_get_vx(void) { return vx; }
-int8_t  player_get_vy(void) { return vy; }
+int16_t player_get_x(void) BANKED  { return px; }
+int16_t player_get_y(void) BANKED  { return py; }
+int8_t  player_get_vx(void) BANKED { return vx; }
+int8_t  player_get_vy(void) BANKED { return vy; }
 
-void player_reset_vel(void) {
+void player_reset_vel(void) BANKED {
     vx = 0;
     vy = 0;
 }
 
-void player_apply_physics(uint8_t buttons, TileType terrain) {
+void player_apply_physics(uint8_t buttons, TileType terrain) BANKED {
     uint8_t i;
     uint8_t fric_x;
     uint8_t fric_y;

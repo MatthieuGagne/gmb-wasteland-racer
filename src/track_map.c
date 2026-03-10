@@ -1,12 +1,19 @@
 /* GENERATED — do not edit by hand. Source: assets/maps/track.tmx */
 /* Regenerate: python3 tools/tmx_to_c.py assets/maps/track.tmx src/track_map.c */
+#pragma bank 255
+#include <gb/gb.h>
 #include "track.h"
+#include "banking.h"
 
+BANKREF(track_start_x)
 const int16_t track_start_x = 88;
+BANKREF(track_start_y)
 const int16_t track_start_y = 720;
 
+BANKREF(track_finish_line_y)
 const uint8_t track_finish_line_y = 5;
 
+BANKREF(track_map)
 const uint8_t track_map[MAP_TILES_H * MAP_TILES_W] = {
     /* row  0 */ 0,0,0,0,1,1,1,1,1,2,2,1,1,1,1,1,0,0,0,0,
     /* row  1 */ 0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,
