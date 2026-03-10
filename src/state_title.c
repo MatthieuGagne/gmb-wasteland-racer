@@ -7,7 +7,7 @@
 #include "state_title.h"
 #include "state_overmap.h"
 
-static void enter(void) BANKED {
+static void enter(void) {
     cls();
     gotoxy(2, 6);
     printf("WASTELAND RACER");
@@ -15,13 +15,13 @@ static void enter(void) BANKED {
     printf("Press START");
 }
 
-static void update(void) BANKED {
+static void update(void) {
     if (KEY_TICKED(J_START)) {
         state_replace(&state_overmap);
     }
 }
 
-static void st_exit(void) BANKED {
+static void st_exit(void) {
 }
 
 const State state_title = { enter, update, st_exit };

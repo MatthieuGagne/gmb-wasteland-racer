@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 typedef struct {
-    void (*enter)(void) BANKED;
-    void (*update)(void) BANKED;
-    void (*exit)(void) BANKED;
+    void (*enter)(void);
+    void (*update)(void);
+    void (*exit)(void);
 } State;
 
 void state_manager_init(void) BANKED;
