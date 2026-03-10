@@ -30,15 +30,22 @@ Each game system lives in `src/<system>.c` + `src/<system>.h`. Asset source file
 These apply to every feature, no matter how small. Full rationale in `docs/plans/2026-03-09-scalability-design.md`.
 
 **Module structure:**
-- Each system gets its own `.c`/`.h` pair; new module checklist: public API in `.h`, all state `static` in `.c`, `tests/test_<system>.c` written first (TDD), `gb-c-optimizer` review before merge.
+- Each system gets its own `.c`/`.h` pair; new module checklist: public API in `.h`, all state `static` in `.c`, `tests/test_<system>.c` written first (TDD), `gb-c-optimizer` review before merge (catches AoS entity pools as an anti-pattern).
 
 **Entity management:**
 - No singletons for things that could multiply. Use fixed-size pools with an `active` flag.
+- Use **Structure-of-Arrays (SoA)**, not Array-of-Structs (AoS). AoS forces stride multiplication
+  (`i * sizeof(Enemy)`) before every field access — SDCC cannot eliminate this on the SM83.
+  SoA reduces each field access to a direct `base + i` load. Hot loops iterate one field at a
+  time — exactly the SoA access pattern.
 - Capacity constants live in `src/config.h` — the single place to tune memory vs. features.
   ```c
+  /* SoA canonical template — one array per field */
   #define MAX_ENEMIES 8
-  typedef struct { uint8_t x, y, active, type; } Enemy;
-  static Enemy enemies[MAX_ENEMIES];
+  static uint8_t enemy_x[MAX_ENEMIES];
+  static uint8_t enemy_y[MAX_ENEMIES];
+  static uint8_t enemy_active[MAX_ENEMIES];
+  static uint8_t enemy_type[MAX_ENEMIES];
   ```
 
 **Memory budgets:**
