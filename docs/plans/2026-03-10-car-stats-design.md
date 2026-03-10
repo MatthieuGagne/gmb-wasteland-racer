@@ -21,9 +21,12 @@ All constants live in `src/config.h`, grouped with the existing physics constant
 #define PLAYER_FRICTION   1   /* friction applied when direction released               */
 #define PLAYER_MAX_SPEED  6   /* GDD "Speed"        — hard cap on velocity per axis     */
 #define PLAYER_HANDLING   3   /* GDD "Handling"     — not yet active, reserved for turning system */
-#define PLAYER_ARMOR      5   /* GDD "Armor"        — not yet active, reserved for damage system  */
+#define PLAYER_ARMOR      5   /* GDD "Armor"        — not yet active, damage reduction factor     */
+#define PLAYER_HP        10   /* hit points         — not yet active, health pool (after armor)   */
 #define PLAYER_FUEL      20   /* GDD "Fuel"         — not yet active, reserved for fuel system    */
 ```
+
+Armor and HP are distinct: incoming damage is reduced by Armor before being subtracted from HP.
 
 ---
 
@@ -38,4 +41,4 @@ All constants live in `src/config.h`, grouped with the existing physics constant
 
 | File | Change |
 |------|--------|
-| `src/config.h` | Add `PLAYER_HANDLING`, `PLAYER_ARMOR`, `PLAYER_FUEL` |
+| `src/config.h` | Add `PLAYER_HANDLING`, `PLAYER_ARMOR`, `PLAYER_HP`, `PLAYER_FUEL` |
