@@ -7,17 +7,15 @@
 #include "sprite_pool.h"
 #include "config.h"
 
-/* Solid 8x8 sprite: all pixels color index 3 */
-static const uint8_t player_tile_data[] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-};
+extern const uint8_t player_tile_data[];
+extern const uint8_t player_tile_data_count;
 
 static int16_t px;
 static int16_t py;
 static int8_t  vx;
 static int8_t  vy;
-static uint8_t player_sprite_slot = 0;
+static uint8_t player_sprite_slot     = 0;
+static uint8_t player_sprite_slot_bot = 0;
 
 /* Returns 1 if all 4 corners of a player at world (wx, wy) are on track. */
 static uint8_t corners_passable(int16_t wx, int16_t wy) {
@@ -31,9 +29,11 @@ static uint8_t corners_passable(int16_t wx, int16_t wy) {
 void player_init(void) {
     SPRITES_8x8;
     sprite_pool_init();
-    player_sprite_slot = get_sprite();  /* claims slot 0 */
-    set_sprite_data(0, 1, player_tile_data);
-    set_sprite_tile(player_sprite_slot, 0);
+    player_sprite_slot     = get_sprite();  /* OAM slot for top half    */
+    player_sprite_slot_bot = get_sprite();  /* OAM slot for bottom half */
+    set_sprite_data(0, 2, player_tile_data); /* load 2 tiles (32 bytes)  */
+    set_sprite_tile(player_sprite_slot,     0); /* top    half = tile 0 */
+    set_sprite_tile(player_sprite_slot_bot, 1); /* bottom half = tile 1 */
     px = track_start_x;
     py = track_start_y;
     vx = 0;

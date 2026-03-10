@@ -40,6 +40,13 @@ src/track_tiles.c: assets/maps/tileset.png tools/png_to_tiles.py
 # Ensure regeneration happens before ROM link if PNG is newer
 $(TARGET): src/track_tiles.c
 
+# src/player_sprite.c is checked into git so CI works without Python.
+# Running `make src/player_sprite.c` (or plain `make`) regenerates it when needed.
+src/player_sprite.c: assets/sprites/player_car.png tools/png_to_tiles.py
+	python3 tools/png_to_tiles.py assets/sprites/player_car.png src/player_sprite.c player_tile_data
+
+$(TARGET): src/player_sprite.c
+
 $(OBJ_DIR)/%.o: src/%.c | $(OBJ_DIR)
 	$(LCC) $(CFLAGS) $(ROMFLAGS) -c -o $@ $<
 
