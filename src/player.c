@@ -3,6 +3,7 @@
 #include "track.h"
 #include "camera.h"
 #include "debug.h"
+#include "sprite_pool.h"
 
 /* Solid 8x8 sprite: all pixels color index 3 */
 static const uint8_t player_tile_data[] = {
@@ -27,9 +28,12 @@ static uint8_t corners_passable(int16_t wx, int16_t wy) {
 
 
 void player_init(void) {
+    uint8_t slot;
     SPRITES_8x8;
+    sprite_pool_init();
+    slot = get_sprite();  /* claims slot 0 */
     set_sprite_data(0, 1, player_tile_data);
-    set_sprite_tile(0, 0);
+    set_sprite_tile(slot, 0);
     px = PLAYER_START_X;
     py = PLAYER_START_Y;
     SHOW_SPRITES;
