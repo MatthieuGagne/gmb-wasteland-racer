@@ -27,6 +27,7 @@
 - **`BANKREF_EXTERN(X)`** goes in the `.h` file or at the top of the `.c` file that **uses** `SET_BANK(X)`.
 - **`SET_BANK(X)` declares `_saved_bank`** — it must be the first statement in its block (or at function scope), not inside a nested block after other statements.
 - **Static helper functions** (not in any header): leave them untagged (they stay NONBANKED).
+- **Function pointer struct fields must NOT use `BANKED`** — SDCC/SM83 generates a double-dereference for `void (*fn)(void) BANKED` struct fields, which is incompatible with direct-address initialization (struct stores `.dw _fn` but call code reads 2 bytes FROM that address as a second pointer). The `State` struct in `state_manager.h` uses plain `void (*fn)(void)`. Callback functions stored in such structs (e.g. `enter`, `update`, `exit` in state_playing/state_title) must also be left non-`BANKED` — they are called from state_manager.c which is in the same bank anyway.
 - **`main.c` gets NO `#pragma bank 255`** — it stays in bank 0.
 - **`vbl_isr()` in `main.c`** is already `NONBANKED` (ISRs must be bank 0) — leave as-is.
 - `BANKED` is a no-op in host-side GCC tests — the mock will define it as empty.
@@ -161,15 +162,15 @@ void camera_flush_vram(void) BANKED { ... }
 
 **`src/state_manager.c`** — tag: `state_manager_init`, `state_manager_update`, `state_push`, `state_pop`, `state_replace`.
 
-**`src/state_playing.c`** — this file's static functions (`enter`, `update`, `sp_exit`) are function pointer targets stored in a `const State`. They are NOT declared in the header with `BANKED`. Tag them anyway so they bank-switch on entry:
+**`src/state_playing.c`** — this file's static functions (`enter`, `update`, `sp_exit`) are function pointer targets stored in a `const State`. Leave them **non-BANKED**:
 ```c
-static void enter(void) BANKED { ... }
-static void update(void) BANKED { ... }
-static void sp_exit(void) BANKED { ... }
+static void enter(void) { ... }
+static void update(void) { ... }
+static void sp_exit(void) { ... }
 ```
-> **Note:** Calls via the `State` function pointer (`current_state->update()`) go through the BANKED trampoline because SDCC embeds the trampoline into the called function's entry point. The ROM build and smoketest will verify this works.
+> **Why non-BANKED:** SDCC/SM83 generates a double-dereference for `void (*)(void) BANKED` struct field calls — it loads the field value then reads 2 more bytes from that address as a second pointer, which jumps to machine-code bytes = blank screen. The `State` struct uses plain `void (*)(void)` pointers. All state modules are in the same autobank (bank 1), so same-bank calls via non-banked pointer work correctly.
 
-**`src/state_title.c`** — same pattern: tag its internal static `enter`, `update`, `exit` functions as `BANKED`.
+**`src/state_title.c`** — same pattern: leave its internal static `enter`, `update`, `st_exit` functions **non-BANKED**.
 
 **`src/track.c`** — tag: `track_tile_type_from_index`, `track_tile_type`, `track_init`, `track_passable`.
 
