@@ -1,10 +1,9 @@
 #include <gb/gb.h>
 #include "track.h"
 
-/* Tile index → TileType lookup table
- * __code keeps this in ROM — without it SDCC copies it to WRAM at boot */
+/* Tile index → TileType lookup table — static const is linked into ROM by SDCC on sm83 */
 #define TILE_LUT_LEN 6u
-static const uint8_t __code tile_type_lut[TILE_LUT_LEN] = {
+static const uint8_t tile_type_lut[TILE_LUT_LEN] = {
     TILE_WALL,   /* 0: off-road */
     TILE_ROAD,   /* 1: road */
     TILE_ROAD,   /* 2: center dashes */
