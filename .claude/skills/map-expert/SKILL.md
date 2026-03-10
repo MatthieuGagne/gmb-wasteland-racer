@@ -268,3 +268,9 @@ The project uses **TMX (XML)** with **CSV encoding**:
 | `encoding: "csv"` in XML = string | Split on `','`, not a JSON array |
 | Tile index formula wrong | Use `layer.width`, not map `width` |
 | Object `type` vs `class` | Pre-1.9: `type` field; since 1.9: `class` field |
+
+---
+
+## Cross-References
+
+- **`sprite-expert`** — OAM sprite asset pipeline, sprite pool, sprite tile loading; use for anything that involves sprites rather than background/window tiles
