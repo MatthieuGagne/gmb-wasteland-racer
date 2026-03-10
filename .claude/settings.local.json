@@ -38,7 +38,9 @@
       "Bash(nm:*)",
       "Bash(chmod +x:*)",
       "Bash(~/gbdk/bin/png2asset:*)",
-      "Bash(pip3 list:*)"
+      "Bash(pip3 list:*)",
+      "WebFetch(domain:laroldsretrogameyard.com)",
+      "WebFetch(domain:emulicious.net)"
     ]
   }
 }
