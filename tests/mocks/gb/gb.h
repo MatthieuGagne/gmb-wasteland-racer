@@ -42,9 +42,13 @@ static inline void set_sprite_data(uint8_t first_tile, uint8_t nb_tiles,
 static inline void set_sprite_tile(uint8_t nb, uint8_t tile) {
     (void)nb; (void)tile;
 }
-static inline void move_sprite(uint8_t nb, uint8_t x, uint8_t y) {
-    (void)nb; (void)x; (void)y;
-}
+/* Tracked by mock_sprites.c */
+extern uint8_t mock_move_sprite_last_nb;
+extern uint8_t mock_move_sprite_last_x;
+extern uint8_t mock_move_sprite_last_y;
+extern int     mock_move_sprite_call_count;
+void mock_move_sprite_reset(void);
+void move_sprite(uint8_t nb, uint8_t x, uint8_t y);
 
 /* Background tile functions */
 #define SHOW_BKG ((void)0)
