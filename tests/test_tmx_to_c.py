@@ -7,6 +7,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'tools'))
 import tmx_to_c as conv
+from tmx_to_c import gid_to_tile_id
 
 # 3×2 map: Tiled IDs 1,2,1 / 2,1,2  →  GB values 0,1,0 / 1,0,1
 MINIMAL_TMX = """\
@@ -63,6 +64,34 @@ class TestTmxToC(unittest.TestCase):
         bad = MINIMAL_TMX.replace('encoding="csv"', 'encoding="base64"')
         with self.assertRaises(ValueError):
             self._convert(bad)
+
+
+class TestGidToTileId(unittest.TestCase):
+
+    def test_normal_tile_firstgid_1(self):
+        # GID 1 with firstgid=1 → tile index 0
+        self.assertEqual(gid_to_tile_id(1, 1), 0)
+
+    def test_normal_tile_firstgid_2(self):
+        # GID 3 with firstgid=2 → tile index 1
+        self.assertEqual(gid_to_tile_id(3, 2), 1)
+
+    def test_empty_cell_returns_zero(self):
+        # GID 0 = empty cell → always 0 regardless of firstgid
+        self.assertEqual(gid_to_tile_id(0, 1), 0)
+        self.assertEqual(gid_to_tile_id(0, 2), 0)
+
+    def test_hflip_stripped(self):
+        # GID with H-flip bit set (0x80000001) and firstgid=1 → tile 0
+        self.assertEqual(gid_to_tile_id(0x80000001, 1), 0)
+
+    def test_vflip_stripped(self):
+        # GID with V-flip bit set (0x40000002) and firstgid=1 → tile 1
+        self.assertEqual(gid_to_tile_id(0x40000002, 1), 1)
+
+    def test_all_flags_stripped(self):
+        # GID with all flip bits set (0xF0000003) and firstgid=1 → tile 2
+        self.assertEqual(gid_to_tile_id(0xF0000003, 1), 2)
 
 
 if __name__ == '__main__':
