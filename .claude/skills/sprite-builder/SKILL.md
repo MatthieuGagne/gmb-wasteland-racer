@@ -11,6 +11,8 @@ Step-by-step guide to add a new sprite from scratch. Uses the Aseprite → `png_
 
 **REQUIRED BACKGROUND:** Invoke the `sprite-expert` skill before writing any code — it has the full API reference, OAM coordinate math, palette setup, and VBlank rules.
 
+**REQUIRED — Aseprite CLI:** ALWAYS invoke the **`aseprite`** skill before running any `aseprite` command. It has the complete flag reference and prevents common mistakes.
+
 ---
 
 ## Quick Checklist
@@ -188,5 +190,6 @@ Check:
 ## Cross-References
 
 - **`sprite-expert`** — Full API reference, coordinate system details, pool internals, CGB palette registers
+- **`aseprite`** — Full Aseprite CLI reference: all flags, sprite sheet export, scripting, filtering
 - **`gbdk-expert`** — OAM hardware, PPU modes, VBlank timing, LCDC register
 - **`map-expert`** — Background tile pipeline (BG tiles are separate from sprite tiles)

@@ -1,6 +1,7 @@
 #include <gb/gb.h>
 #include "state_overmap.h"
 #include "state_playing.h"
+#include "state_hub.h"
 #include "state_manager.h"
 #include "config.h"
 #include "input.h"
@@ -68,11 +69,19 @@ static void update(void) {
     car_ty = new_ty;
     overmap_move_sprite();
 
-    if (overmap_map[(uint16_t)car_ty * OVERMAP_W + car_tx] == OVERMAP_TILE_DEST) {
-        current_race_id = (car_tx < OVERMAP_HUB_TX) ? 0u : 1u;
-        player_set_pos(track_start_x, track_start_y);
-        player_reset_vel();
-        state_replace(&state_playing);
+    {
+        uint8_t tile = overmap_map[(uint16_t)car_ty * OVERMAP_W + car_tx];
+        if (tile == OVERMAP_TILE_CITY_HUB) {
+            state_push(&state_hub);
+            overmap_hub_entered = 1u;  /* set after enter() so hub can clear on re-entry */
+            return;
+        }
+        if (tile == OVERMAP_TILE_DEST) {
+            current_race_id = (car_tx < OVERMAP_HUB_TX) ? 0u : 1u;
+            player_set_pos(track_start_x, track_start_y);
+            player_reset_vel();
+            state_replace(&state_playing);
+        }
     }
 }
 

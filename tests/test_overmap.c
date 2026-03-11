@@ -1,5 +1,6 @@
 #include "unity.h"
 #include "state_overmap.h"
+#include "state_hub.h"
 #include "config.h"
 #include "input.h"
 
@@ -38,10 +39,10 @@ void test_right_moves_onto_road(void) {
     TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TX + 1u, overmap_get_car_tx());
 }
 
-void test_up_blocked_by_blank(void) {
-    /* Row 7 above the road row is blank — movement must be blocked */
+void test_up_moves_onto_road_tile(void) {
+    /* Row 7 col 9 is now a road tile — moving up from spawn must succeed */
     tick(J_UP);
-    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TY, overmap_get_car_ty());
+    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TY - 1u, overmap_get_car_ty());
 }
 
 void test_down_blocked_by_blank(void) {
@@ -76,15 +77,34 @@ void test_dest_right_sets_race_id(void) {
     TEST_ASSERT_EQUAL_UINT8(1u, current_race_id);
 }
 
+void test_city_hub_tile_triggers_hub_entry(void) {
+    /* City hub building is at (9, 6) — two moves north from spawn. */
+    overmap_hub_entered = 0u;
+    tick(J_UP);  /* (9,8) → (9,7) road */
+    TEST_ASSERT_EQUAL_UINT8(0u, overmap_hub_entered);  /* road: no trigger yet */
+    tick(J_UP);  /* (9,7) → (9,6) city hub */
+    TEST_ASSERT_EQUAL_UINT8(1u, overmap_hub_entered);
+}
+
+void test_city_hub_tile_car_position_unchanged_after_enter(void) {
+    /* Car should stay at (9,6) after entering hub */
+    tick(J_UP);
+    tick(J_UP);
+    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TX,      overmap_get_car_tx());
+    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TY - 2u, overmap_get_car_ty());
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_car_starts_at_hub);
     RUN_TEST(test_left_moves_onto_road);
     RUN_TEST(test_right_moves_onto_road);
-    RUN_TEST(test_up_blocked_by_blank);
+    RUN_TEST(test_up_moves_onto_road_tile);
     RUN_TEST(test_down_blocked_by_blank);
     RUN_TEST(test_held_button_does_not_repeat);
     RUN_TEST(test_dest_left_sets_race_id);
     RUN_TEST(test_dest_right_sets_race_id);
+    RUN_TEST(test_city_hub_tile_triggers_hub_entry);
+    RUN_TEST(test_city_hub_tile_car_position_unchanged_after_enter);
     return UNITY_END();
 }

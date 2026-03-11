@@ -89,7 +89,22 @@
       "Bash(curl -s https://raw.githubusercontent.com/SuperDisk/hUGEDriver/master/gbdk_example/src/sample_song.c | wc -l)",
       "Bash(curl -s https://raw.githubusercontent.com/SuperDisk/hUGEDriver/master/gbdk_example/src/sample_song.c)",
       "Bash(git -C /home/mathdaman/code/gmb-wasteland-racer branch --show-current && ls /home/mathdaman/code/gmb-wasteland-racer/src/overmap*.c 2>/dev/null || echo \"no overmap files in main tree\")",
-      "Bash(pwd && ls src/overmap*.c 2>/dev/null || echo \"no overmap in cwd\" && ls /home/mathdaman/code/gmb-wasteland-racer/.claude/worktrees/feat/sprite-expert-skill/src/overmap*.c)"
+      "Bash(pwd && ls src/overmap*.c 2>/dev/null || echo \"no overmap in cwd\" && ls /home/mathdaman/code/gmb-wasteland-racer/.claude/worktrees/feat/sprite-expert-skill/src/overmap*.c)",
+      "Bash(/home/mathdaman/gbdk/bin/romusage build/wasteland-racer.gb -g 2>&1)",
+      "Bash(/home/mathdaman/gbdk/bin/romusage /tmp/wr-bisect-pre69/build/wasteland-racer.gb -g 2>&1)",
+      "Bash(/home/mathdaman/gbdk/bin/romusage build/wasteland-racer.gb -a 2>&1 | head -60)",
+      "Bash(ls build/*.map build/*.noi build/*.sym 2>/dev/null | head -5)",
+      "Bash(/home/mathdaman/gbdk/bin/romusage /home/mathdaman/code/gmb-wasteland-racer/.claude/worktrees/feat/city-hub-mvp/build/wasteland-racer.gb -g 2>&1)",
+      "Bash(file /home/mathdaman/code/gmb-wasteland-racer/assets/maps/overmap_tiles.png && identify /home/mathdaman/code/gmb-wasteland-racer/assets/maps/overmap_tiles.png 2>/dev/null || echo \"identify not available\")",
+      "Bash(ls /home/mathdaman/code/gmb-wasteland-racer/.worktrees/feat-city-hub-mvp/src/state_city_hub* 2>/dev/null; grep -n \"CITY_HUB\\\\|city_hub\" /home/mathdaman/code/gmb-wasteland-racer/.worktrees/feat-city-hub-mvp/src/config.h 2>/dev/null || echo \"not in config.h\")",
+      "Bash(ls src/state_hub* src/hub_data* src/state_overmap* 2>/dev/null)",
+      "Bash(python3 -c \"\nfrom PIL import Image\nimg = Image.open\\('assets/maps/overmap_tiles.png'\\)\nprint\\(f'Size: {img.size}'\\)\n\" 2>/dev/null || identify assets/maps/overmap_tiles.png 2>/dev/null || file assets/maps/overmap_tiles.png)",
+      "Bash(aseprite --version 2>&1 | head -3)",
+      "Bash(aseprite --batch --script /tmp/add_hub_tile.lua --script-param file=assets/maps/overmap_tiles.aseprite assets/maps/overmap_tiles.aseprite 2>&1)",
+      "Bash(aseprite --batch assets/maps/overmap_tiles.aseprite --script /tmp/add_hub_tile.lua 2>&1)",
+      "Bash(aseprite --batch assets/maps/overmap_tiles.aseprite --save-as assets/maps/overmap_tiles.png 2>&1 | grep -v \"Unsupported chunk\")",
+      "Bash(aseprite --batch assets/maps/overmap_tiles.aseprite --script /tmp/sync_aseprite_tile.lua 2>&1 | grep -v \"Unsupported chunk\")",
+      "WebFetch(domain:www.aseprite.org)"
     ]
   }
 }
