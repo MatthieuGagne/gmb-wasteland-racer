@@ -29,6 +29,14 @@ assets/sprites/<name>.aseprite  →  (make export-sprites)  →  assets/sprites/
 - **Palette index 0 is always transparent in OBJ mode** — use indices 1–3 for visible sprite pixels
 - Export: File → Export As → PNG, or `make export-sprites` to batch-export all sources
 
+**All assets in the project that use this pipeline:**
+
+| Asset | Source | PNG | Generated C |
+|-------|--------|-----|-------------|
+| Player car | `assets/sprites/player_car.aseprite` | `assets/sprites/player_car.png` | `src/player_sprite.c` |
+| Track tileset (7 tiles: wall/road/dashes/sand/oil/boost/finish) | `assets/maps/tileset.aseprite` | `assets/maps/tileset.png` | `src/track_tiles.c` |
+| Overmap tiles (4 tiles: blank/road/hub/dest) | `assets/maps/overmap_tiles.aseprite` | `assets/maps/overmap_tiles.png` | `src/overmap_tiles.c` |
+
 **PNG requirements for `png_to_tiles.py`:**
 - Color type 3 (indexed), bit depth 8 — **default output from Aseprite** `--save-as` export; indices must be 0–3
 - Color type 3 (indexed), bit depth 2 — also accepted; indices used directly
@@ -168,6 +176,7 @@ set_sprite_data(0, n, tile_data_array);   /* VRAM write — safe in VBlank */
 | Calling `set_sprite_data` outside VBlank | Wrap with `wait_vbl_done()` unless display is off |
 | Using 152/136 as max position | Visible bounds: oam_x ∈ [8,167], oam_y ∈ [16,159] |
 | Editing `src/*_sprite.c` by hand | Generated — edit the `.aseprite`, re-export, re-run `png_to_tiles.py` |
+| Hardcoding `uint8_t tile_data[] = {0xFF,0x00,...}` in `.c` | **NEVER** — every tile/sprite must have `.aseprite` → PNG → `png_to_tiles.py` pipeline |
 | Using palette index 0 for sprite pixels | Always transparent; use indices 1–3 |
 | Forgetting to check `SPRITE_POOL_INVALID` | `get_sprite()` returns `0xFF` when pool is full |
 | Loading tile data before `SPRITES_8x8` | Set mode first, then load data and assign tiles |

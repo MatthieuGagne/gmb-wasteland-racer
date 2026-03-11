@@ -39,12 +39,6 @@ void track_init(void) BANKED {
     SET_BANK(track_tile_data);
     set_bkg_data(0, track_tile_data_count, track_tile_data);
     RESTORE_BANK();
-    /* Finish line tile — horizontal alternating stripes; color 1/3 */
-    static const uint8_t finish_tile_data[16] = {
-        0xFF,0xFF, 0xFF,0x00, 0xFF,0xFF, 0xFF,0x00,
-        0xFF,0xFF, 0xFF,0x00, 0xFF,0xFF, 0xFF,0x00,
-    };
-    set_bkg_data(6, 1u, finish_tile_data);
     /* Tilemap loaded by camera_init() */
     SHOW_BKG;
 }
