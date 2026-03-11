@@ -126,6 +126,7 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 - **`gb-c-optimizer`** — C code review for GBC performance/ROM size, anti-pattern detection, SDCC optimization.
 - **`/map-expert`** — Map pipeline: Tiled TMX format, Python converters (`tmx_to_c`, `png_to_tiles`), GB BG tilemap hardware. Use when creating or modifying maps. **Update this skill in the same PR** whenever the pipeline changes.
 - **`/sprite-expert`** — Sprite pipeline: Aseprite authoring, `png_to_tiles.py`, sprite pool, OAM API, CGB palette for sprites, coordinate system. Use when creating or modifying sprites. **Update this skill in the same PR** whenever the sprite system changes.
+- **`/aseprite`** — Aseprite CLI reference: all `--batch` flags, sprite sheet export, layer/tag filtering, color mode conversion, scripting. **ALWAYS invoke before running any `aseprite` command.**
 
 ## Workflow
 

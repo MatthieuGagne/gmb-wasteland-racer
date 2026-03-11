@@ -50,6 +50,8 @@ aseprite --batch assets/sprites/<name>.aseprite --save-as assets/sprites/<name>.
 ```
 Note: `--export-type` is NOT a valid flag. Use `--save-as` with a `.png` extension.
 
+**REQUIRED — Aseprite CLI:** ALWAYS invoke the **`aseprite`** skill before running any `aseprite` command. It has the complete flag reference and prevents common mistakes (e.g., `--export-type` is not a valid flag).
+
 **Run tests after any converter change:**
 ```sh
 python3 -m unittest discover -s tests -p "test_png_to_tiles.py" -v
@@ -185,5 +187,6 @@ set_sprite_data(0, n, tile_data_array);   /* VRAM write — safe in VBlank */
 
 ## Cross-References
 
+- **`aseprite`** — Full Aseprite CLI reference: all flags, sprite sheet options, scripting, layer/tag filtering
 - **`gbdk-expert`** — OAM hardware registers, PPU modes, CGB palette registers, VBlank timing details
 - **`map-expert`** — Tiled map/tileset format; tile data pipeline for background tiles (not sprites)
