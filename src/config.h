@@ -44,4 +44,8 @@
 #define OVERMAP_TILE_HUB    2u
 #define OVERMAP_TILE_DEST   3u
 
+/* Hub system */
+#define MAX_HUB_NPCS           3u
+#define HUB_PORTRAIT_TILE_SLOT 96u   /* BKG tile slots 96-99 for 16x16 portrait */
+
 #endif /* CONFIG_H */

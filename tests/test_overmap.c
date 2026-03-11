@@ -1,5 +1,6 @@
 #include "unity.h"
 #include "state_overmap.h"
+#include "state_hub.h"
 #include "config.h"
 #include "input.h"
 
@@ -76,6 +77,22 @@ void test_dest_right_sets_race_id(void) {
     TEST_ASSERT_EQUAL_UINT8(1u, current_race_id);
 }
 
+void test_hub_tile_sets_entered_flag(void) {
+    /* Car starts AT hub tile. Move off (left to road), clear flag, move back. */
+    tick(J_LEFT);
+    overmap_hub_entered = 0u;
+    tick(J_RIGHT);
+    TEST_ASSERT_EQUAL_UINT8(1u, overmap_hub_entered);
+}
+
+void test_hub_tile_car_position_unchanged_after_enter(void) {
+    tick(J_LEFT);
+    overmap_hub_entered = 0u;
+    tick(J_RIGHT);
+    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TX, overmap_get_car_tx());
+    TEST_ASSERT_EQUAL_UINT8(OVERMAP_HUB_TY, overmap_get_car_ty());
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_car_starts_at_hub);
@@ -86,5 +103,7 @@ int main(void) {
     RUN_TEST(test_held_button_does_not_repeat);
     RUN_TEST(test_dest_left_sets_race_id);
     RUN_TEST(test_dest_right_sets_race_id);
+    RUN_TEST(test_hub_tile_sets_entered_flag);
+    RUN_TEST(test_hub_tile_car_position_unchanged_after_enter);
     return UNITY_END();
 }

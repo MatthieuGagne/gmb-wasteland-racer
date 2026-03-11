@@ -37,13 +37,30 @@ static const DialogNode mechanic_nodes[] = {
     /* 6 */ { m6, 0, {NULL,   NULL,   NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
 };
 
+/* NPC 1: Trader */
+static const char t0[] = "Got caps? I've got wares.";
+static const char t1[] = "Come back when you're loaded.";
+static const char tc0[] = "Browse";
+static const char tc1[] = "Leave";
+static const DialogNode trader_nodes[] = {
+    { t0, 2, {tc0,  tc1,  NULL}, {1,          DIALOG_END, DIALOG_END} },
+    { t1, 0, {NULL, NULL, NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
+};
+
+/* NPC 2: Drifter */
+static const char d0[] = "Just passing through.";
+static const char d1[] = "Stay sharp out there.";
+static const DialogNode drifter_nodes[] = {
+    { d0, 0, {NULL, NULL, NULL}, {1,          DIALOG_END, DIALOG_END} },
+    { d1, 0, {NULL, NULL, NULL}, {DIALOG_END, DIALOG_END, DIALOG_END} },
+};
+
 /* --- NPC dialog table (indexed by npc_id) ------------------------------- */
-/* Slots 1-5 are placeholders pointing at mechanic until more NPCs are added */
 BANKREF(npc_dialogs)
 const NpcDialog npc_dialogs[] = {
-    { mechanic_nodes, 7 }, /* NPC 0: mechanic */
-    { mechanic_nodes, 7 }, /* NPC 1: placeholder */
-    { mechanic_nodes, 7 }, /* NPC 2: placeholder */
+    { mechanic_nodes, 7 }, /* NPC 0: Mechanic   */
+    { trader_nodes,   2 }, /* NPC 1: Trader     */
+    { drifter_nodes,  2 }, /* NPC 2: Drifter    */
     { mechanic_nodes, 7 }, /* NPC 3: placeholder */
     { mechanic_nodes, 7 }, /* NPC 4: placeholder */
     { mechanic_nodes, 7 }, /* NPC 5: placeholder */
