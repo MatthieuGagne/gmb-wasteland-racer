@@ -73,7 +73,10 @@
       "Bash(ls /home/mathdaman/code/gmb-wasteland-racer/.worktrees/feat-autobanking/src/*.h)",
       "Bash(mkdir -p ~/.local/bin && cp /mnt/c/Users/mathd/Downloads/Aseprite_1.3.17-x64.AppImage ~/.local/bin/aseprite && chmod +x ~/.local/bin/aseprite && echo \"Done\")",
       "Bash(mv ~/.local/squashfs-root ~/.local/aseprite && ln -sf ~/.local/aseprite/AppRun ~/.local/bin/aseprite && echo \"Done\")",
-      "Bash(ls /home/mathdaman/code/gmb-wasteland-racer/.claude/worktrees/feat/sprite-expert-skill/tests/*.py)"
+      "Bash(ls /home/mathdaman/code/gmb-wasteland-racer/.claude/worktrees/feat/sprite-expert-skill/tests/*.py)",
+      "Bash(GBDK_HOME=/home/mathdaman/gbdk make 2>&1 | grep -v \"^$\" | grep -v \"warning\" | tail -10)",
+      "Bash(aseprite --help 2>&1 | grep -A2 -i \"save\\\\|export\\\\|batch\")",
+      "Bash(aseprite --batch assets/sprites/player_car.aseprite --save-as assets/sprites/player_car.png && aseprite --batch assets/maps/tileset.aseprite --save-as assets/maps/tileset.png && echo \"export OK\")"
     ]
   }
 }
