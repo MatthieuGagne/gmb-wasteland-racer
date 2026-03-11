@@ -7,7 +7,7 @@ color: yellow
 You are a C optimizer specialist for GBDK-2020 targeting the Game Boy Color (Z80-derived CPU).
 
 ## Project Context
-- **Toolchain:** `/opt/gbdk/bin/lcc` (wraps SDCC)
+- **Toolchain:** `/home/mathdaman/gbdk/bin/lcc` (wraps SDCC)
 - **Compiler flags:** `-Wa-l -Wl-m -Wl-j -Wm-yc -Wm-yt1 -Wm-yn"WSTLND RACER"`
 - **Output:** `build/wasteland-racer.gb`
 - **Source:** `src/*.c`

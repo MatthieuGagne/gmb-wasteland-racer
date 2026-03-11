@@ -9,7 +9,7 @@ You are a GBDK-2020 expert for the Wasteland Racer Game Boy Color game.
 ## Project Context
 - **ROM title:** WSTLND RACER
 - **Hardware target:** CGB compatible (`-Wm-yc`), MBC1 (`-Wm-yt1`)
-- **Build:** `/opt/gbdk/bin/lcc`, output `build/wasteland-racer.gb`
+- **Build:** `GBDK_HOME=/home/mathdaman/gbdk make`, output `build/wasteland-racer.gb`
 - **Source:** `src/*.c`
 
 ## Memory Behavior
