@@ -99,6 +99,8 @@ If two `SET_BANK` calls are needed in one function, wrap each in its own `{ }` b
 
 **Generated asset files** (`tools/png_to_tiles.py`, `tools/tmx_to_c.py`) already emit the correct banking boilerplate — do not strip it.
 
+**Asset pipeline rule — NO hardcoded 2bpp tile data in C source:** Every tile or sprite asset must have an `.aseprite` canonical source under `assets/`, exported to PNG via `make export-sprites`, and converted to a C array via `png_to_tiles.py`. Maps must have a `.tmx`/`.tsx` in `assets/maps/` and be converted via `tmx_to_c.py`. Never write raw `uint8_t tile_data[] = { 0xFF, 0x00, ... }` inline in `.c` files — use the pipeline.
+
 **Mock header** (`tests/mocks/gb/gb.h`) defines `BANKREF`, `BANKREF_EXTERN`, `BANK()`, `SET_BANK`, `RESTORE_BANK` as no-ops so tests compile without hardware.
 
 ## GBDK / SDCC Constraints
@@ -122,8 +124,8 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 - **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, MBC banking, compilation errors.
 - **`gb-c-optimizer`** — C code review for GBC performance/ROM size, anti-pattern detection, SDCC optimization.
-- **`/map-expert`** — Map pipeline: Tiled TMX format, Python converters (`tmx_to_c`, `gen_tileset`), GB BG tilemap hardware. Use when creating or modifying maps. **Update this skill in the same PR** whenever the pipeline changes.
-- **`/sprite-expert`** — Sprite pipeline: sprite editor, `png_to_tiles.py`, sprite pool, OAM API, CGB palette for sprites, coordinate system. Use when creating or modifying sprites. **Update this skill in the same PR** whenever the sprite system changes.
+- **`/map-expert`** — Map pipeline: Tiled TMX format, Python converters (`tmx_to_c`, `png_to_tiles`), GB BG tilemap hardware. Use when creating or modifying maps. **Update this skill in the same PR** whenever the pipeline changes.
+- **`/sprite-expert`** — Sprite pipeline: Aseprite authoring, `png_to_tiles.py`, sprite pool, OAM API, CGB palette for sprites, coordinate system. Use when creating or modifying sprites. **Update this skill in the same PR** whenever the sprite system changes.
 
 ## Workflow
 

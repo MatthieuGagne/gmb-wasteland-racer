@@ -7,61 +7,9 @@
 #include "player.h"
 #include "track.h"
 
-/* ── Tile visual data (2bpp, 4 tiles × 16 bytes = 64 bytes in ROM) ──────── */
-/* Color 0 = transparent/bg, color 1 = gray road, color 2 = border, color 3 = filled */
-/* 2bpp encoding: each row = 2 bytes [low_plane, high_plane]                 */
-/*   color 0: low=0, high=0  |  color 1: low=1, high=0  (0xFF,0x00)         */
-/*   color 2: low=0, high=1  (0x00,0xFF)  |  color 3: low=1, high=1 (0xFF,0xFF) */
-static const uint8_t overmap_tile_data[64] = {
-    /* tile 0: blank — all color 0 */
-    0x00,0x00, 0x00,0x00, 0x00,0x00, 0x00,0x00,
-    0x00,0x00, 0x00,0x00, 0x00,0x00, 0x00,0x00,
-    /* tile 1: road — horizontal band (rows 2-5 in color 1) */
-    0x00,0x00, 0x00,0x00, 0xFF,0x00, 0xFF,0x00,
-    0xFF,0x00, 0xFF,0x00, 0x00,0x00, 0x00,0x00,
-    /* tile 2: hub — filled color 3 */
-    0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF,
-    0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF, 0xFF,0xFF,
-    /* tile 3: dest — outline in color 2 */
-    0x00,0xFF, 0x00,0x81, 0x00,0x81, 0x00,0x81,
-    0x00,0x81, 0x00,0x81, 0x00,0x81, 0x00,0xFF,
-};
-
-/* ── Overmap BKG tile map (20×18 = 360 bytes in ROM) ─────────────────────── */
-/* All rows are blank except row 8 which has the road, hub, and dest tiles.   */
-static const uint8_t overmap_map[OVERMAP_H * OVERMAP_W] = {
-    /* rows 0-7: blank (8 × 20 = 160 zeros) */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 0 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 1 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 2 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 3 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 4 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 5 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 6 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 7 */
-    /* row 8: blank,blank,dest,road×6,hub,road×7,dest,blank,blank */
-    /* tx: 0  1  2                           3  4  5  6  7  8  */
-    0, 0,
-    OVERMAP_TILE_DEST,
-    OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD,
-    OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD,
-    OVERMAP_TILE_HUB,
-    OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD,
-    OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD, OVERMAP_TILE_ROAD,
-    OVERMAP_TILE_ROAD,
-    OVERMAP_TILE_DEST,
-    0, 0,
-    /* rows 9-17: blank (9 × 20 = 180 zeros) */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 9  */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 10 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 11 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 12 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 13 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 14 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 15 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 16 */
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  /* row 17 */
-};
+/* Tile and map data are generated from Aseprite/Tiled sources.
+ * Edit assets/maps/overmap_tiles.aseprite in Aseprite or assets/maps/overmap.tmx
+ * in Tiled, then run `make` to regenerate src/overmap_tiles.c and src/overmap_map.c. */
 
 /* ── State ─────────────────────────────────────────────────────────────────── */
 static uint8_t car_tx;
@@ -91,8 +39,12 @@ static void enter(void) {
 
     wait_vbl_done();
     DISPLAY_OFF;
-    set_bkg_data(0u, 4u, overmap_tile_data);
-    set_bkg_tiles(0u, 0u, OVERMAP_W, OVERMAP_H, overmap_map);
+    { SET_BANK(overmap_tile_data);
+      set_bkg_data(0u, overmap_tile_data_count, overmap_tile_data);
+      RESTORE_BANK(); }
+    { SET_BANK(overmap_map);
+      set_bkg_tiles(0u, 0u, OVERMAP_W, OVERMAP_H, overmap_map);
+      RESTORE_BANK(); }
     DISPLAY_ON;
 
     SHOW_BKG;
