@@ -1,6 +1,6 @@
-# Music Expert — Wasteland Racer
+# Music Expert — Nuke Raider
 
-Use when working with hUGEDriver music integration, song data, APU registers, or audio for the Wasteland Racer GBC project.
+Use when working with hUGEDriver music integration, song data, APU registers, or audio for the Nuke Raider GBC project.
 
 ---
 

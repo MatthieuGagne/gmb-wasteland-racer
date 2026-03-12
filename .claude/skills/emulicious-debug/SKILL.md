@@ -1,15 +1,15 @@
 ---
 name: emulicious-debug
-description: Use when debugging the Wasteland Racer ROM in Emulicious — EMU_printf output, step-through debugging, breakpoints, memory/tile/sprite inspection, tracer, profiler, or romusage analysis.
+description: Use when debugging the Nuke Raider ROM in Emulicious — EMU_printf output, step-through debugging, breakpoints, memory/tile/sprite inspection, tracer, profiler, or romusage analysis.
 ---
 
-# Emulicious Debugging — Wasteland Racer
+# Emulicious Debugging — Nuke Raider
 
 ## Quick Start
 
 ```sh
 # Run ROM in Emulicious
-java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/wasteland-racer.gb
+java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/nuke-raider.gb
 ```
 
 **Further reading:**
@@ -64,7 +64,7 @@ EMU_printf("cam_y=%u py=%u\n", cam_y, py);
             "type": "emulicious-debugger",
             "request": "launch",
             "name": "Launch in Emulicious",
-            "program": "${workspaceFolder}/build/wasteland-racer.gb",
+            "program": "${workspaceFolder}/build/nuke-raider.gb",
             "port": 58870,
             "stopOnEntry": true
         }
@@ -127,7 +127,7 @@ Useful for: confirming which code path runs, finding dead code, verifying interr
 Included with GBDK-2020. Run after build to check space usage:
 
 ```sh
-romusage build/wasteland-racer.gb -g
+romusage build/nuke-raider.gb -g
 ```
 
 **Common flags:**
@@ -142,7 +142,7 @@ romusage build/wasteland-racer.gb -g
 
 For full symbol breakdown, build with `-debug` to generate `.cdb` file, then:
 ```sh
-romusage build/wasteland-racer.cdb -a
+romusage build/nuke-raider.cdb -a
 ```
 
 ---
@@ -150,7 +150,7 @@ romusage build/wasteland-racer.cdb -a
 ## Workflow: Debugging a Bug
 
 1. Add `EMU_printf` at the suspect location, rebuild (`/build`)
-2. Launch: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/wasteland-racer.gb`
+2. Launch: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/nuke-raider.gb`
 3. Observe console output; narrow the problem
 4. Set VS Code breakpoints at suspect line; use Step Over/Into to inspect variables
 5. Use Tilemap/Sprite Viewers to confirm visual state matches logic

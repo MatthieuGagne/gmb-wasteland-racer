@@ -10,7 +10,7 @@
 static void enter(void) {
     cls();
     gotoxy(2, 6);
-    printf("WASTELAND RACER");
+    printf("NUKE RAIDER");
     gotoxy(3, 10);
     printf("Press START");
 }
