@@ -6,7 +6,6 @@
 BANKREF_EXTERN(player_tile_data)
 #include "track.h"
 #include "camera.h"
-#include "debug.h"
 #include "sprite_pool.h"
 #include "config.h"
 
@@ -80,11 +79,7 @@ void player_render(void) BANKED {
     uint8_t hw_y = (uint8_t)((int16_t)py - (int16_t)cam_y + 16);
     move_sprite(player_sprite_slot,     hw_x, hw_y);
     move_sprite(player_sprite_slot_bot, hw_x, (uint8_t)(hw_y + 8u));
-    /* Log when sprite is near or outside visible bounds */
-    if (hw_x < 8u || hw_x > 167u || hw_y < 16u || hw_y > 159u) {
-        DBG_INT("hw_x_oob", hw_x);
-        DBG_INT("hw_y_oob", hw_y);
-    }
+
 }
 
 void player_set_pos(int16_t x, int16_t y) BANKED {

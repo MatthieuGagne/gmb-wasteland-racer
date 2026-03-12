@@ -2,7 +2,6 @@
 #include <gb/gb.h>
 #include "camera.h"
 #include "track.h"
-#include "debug.h"
 
 volatile uint16_t cam_y;
 
@@ -67,17 +66,11 @@ void camera_update(int16_t player_world_x, int16_t player_world_y) BANKED {
         stream_buf_len++;
     }
 
-    if (stream_buf_len > 0u) {
-        DBG_INT("stream_enq", stream_buf_len);
-    }
     cam_y = ncy;
 }
 
 void camera_flush_vram(void) BANKED {
     uint8_t i;
-    if (stream_buf_len > 0u) {
-        DBG_INT("stream_flush", stream_buf_len);
-    }
     for (i = 0u; i < stream_buf_len; i++) {
         stream_row(stream_buf[i]);
     }

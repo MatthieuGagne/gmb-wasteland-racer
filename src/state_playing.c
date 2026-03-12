@@ -8,12 +8,6 @@
 #include "track.h"
 #include "camera.h"
 #include "hud.h"
-#include "debug.h"
-
-#ifdef DEBUG
-static uint16_t frame_count = 0u;
-static const char * const terrain_names[] = { "WALL", "ROAD", "SAND", "OIL", "BOOST" };
-#endif
 
 static void enter(void) {
     player_set_pos(track_start_x, track_start_y);
@@ -26,16 +20,6 @@ static void enter(void) {
 }
 
 static void update(void) {
-#ifdef DEBUG
-    frame_count++;
-    if (frame_count % 30u == 0u) {
-        TileType t = track_tile_type((int16_t)(player_get_x() + 4),
-                                     (int16_t)(player_get_y() + 4));
-        DBG_STR(terrain_names[t < 5u ? t : 1u]);
-        DBG_INT("vx", (int)player_get_vx());
-        DBG_INT("vy", (int)player_get_vy());
-    }
-#endif
     /* VBlank phase: all VRAM writes immediately after frame_ready */
     player_render();
     hud_render();
