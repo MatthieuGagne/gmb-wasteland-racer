@@ -86,6 +86,37 @@ Songs are exported from hUGETracker as "GBDK .c" format. The project uses the hU
 
 ---
 
+## Version Pinning
+
+hUGETracker and hUGEDriver **must match exactly** (e.g., hUGETracker 1.0b10 requires hUGEDriver 1.0b10). The data format changes between versions — mismatches produce silent corruption or crashes. This project vendors v6.1.3; do not update one without the other.
+
+---
+
+## Sound Effects (SFX)
+
+hUGEDriver has no built-in SFX system. Coordinate SFX via channel muting:
+
+```c
+// 1. Release a channel from driver control (0=CH1, 1=CH2, 2=CH3/wave, 3=CH4/noise)
+hUGE_mute_channel(HT_CH2, HT_CH_MUTE);
+
+// 2. Play SFX on that channel using your SFX engine
+
+// 3. Restore channel to hUGEDriver
+hUGE_mute_channel(HT_CH2, HT_CH_PLAY);
+```
+
+**Wave channel (CH3) special case:** If you write to wave RAM (FF30–FF3F) while CH3 is released, set:
+```c
+hUGE_current_wave = HT_NO_WAVE;   // forces driver to reload waveform on restore
+```
+
+Effects 5, 8, B, D, F continue to process even on muted channels.
+
+**Compatible SFX engines:** VGM2GBSFX, CBT-FX, Libbet's SFX Engine.
+
+---
+
 ## Integration Pattern
 
 ### music_data.c (banked)
@@ -276,14 +307,106 @@ https://raw.githubusercontent.com/SuperDisk/hUGEDriver/master/gbdk_example/src/s
 
 ---
 
-## APU Hardware Notes (Game Boy)
+## APU Register Map (FF10–FF3F)
 
-- APU registers: FF10–FF3F (see GBDK `<gb/hardware.h>`)
-- `NR52_REG` (FF26) bit 7 = master on/off; must be 1 before any channel config
-- `NR51_REG` (FF25) = channel panning (all bits = all channels both speakers)
-- `NR50_REG` (FF24) = master volume; `0x77` = max (7 left, 7 right)
-- hUGEDriver uses CH1 (pulse), CH2 (pulse), CH3 (wave), CH4 (noise)
-- CH3 wave RAM at FF30–FF3F; hUGEDriver manages this — don't write it manually while music plays unless using `hUGE_reset_wave()` afterward
+```
+Name  Addr  Bits        Function
+-----------------------------------------------------------------------
+NR10  FF10  -PPP NSSS   CH1 sweep: pace, negate, shift
+NR11  FF11  DDLL LLLL   CH1 duty + length load (64-L)
+NR12  FF12  VVVV APPP   CH1 volume envelope: init vol, add, period
+NR13  FF13  FFFF FFFF   CH1 period low (write-only)
+NR14  FF14  TL-- -FFF   CH1 trigger, length enable, period high
+
+NR21  FF16  DDLL LLLL   CH2 duty + length load
+NR22  FF17  VVVV APPP   CH2 volume envelope
+NR23  FF18  FFFF FFFF   CH2 period low (write-only)
+NR24  FF19  TL-- -FFF   CH2 trigger, length enable, period high
+
+NR30  FF1A  E--- ----   CH3 DAC enable (bit 7)
+NR31  FF1B  LLLL LLLL   CH3 length load (256-L)
+NR32  FF1C  -VV- ----   CH3 volume: 00=0%, 01=100%, 10=50%, 11=25%
+NR33  FF1D  FFFF FFFF   CH3 period low (write-only)
+NR34  FF1E  TL-- -FFF   CH3 trigger, length enable, period high
+
+NR41  FF20  --LL LLLL   CH4 length load
+NR42  FF21  VVVV APPP   CH4 volume envelope
+NR43  FF22  SSSS WDDD   CH4 clock shift, LFSR width, divisor code
+NR44  FF23  TL-- ----   CH4 trigger, length enable
+
+NR50  FF24  ALLL BRRR   Master vol: Vin-L, left vol (7=max), Vin-R, right vol
+NR51  FF25  NW21 NW21   Panning: upper nibble=left, lower nibble=right per channel
+NR52  FF26  P--- NW21   APU power (bit 7); channel active flags (read-only bits 0-3)
+
+FF30–FF3F               Wave RAM: 16 bytes = 32 four-bit samples (high nibble first)
+```
+
+**Read-back mask (ORed with written value):**
+CH1: $80/$3F/$00/$FF/$BF — CH2: $FF/$3F/$00/$FF/$BF — CH3: $7F/$FF/$9F/$FF/$BF — CH4: $FF/$FF/$00/$00/$BF
+
+---
+
+## APU Frame Sequencer
+
+Clocked at **512 Hz** off the DIV register (bit 4 falling edge). Drives modulation at lower rates:
+
+```
+Step  Length Ctr  Vol Env  Sweep
+---------------------------------
+0     Clock       -        -
+1     -           -        -
+2     Clock       -        Clock
+3     -           -        -
+4     Clock       -        -
+5     -           -        -
+6     Clock       -        Clock
+7     -           Clock    -
+---------------------------------
+Rate  256 Hz      64 Hz    128 Hz
+```
+
+**APU timing is NOT affected by CGB double-speed mode** — same rates regardless of CPU speed.
+
+---
+
+## APU Hardware Notes
+
+- `NR52_REG` (FF26) bit 7 = master on/off; turning off clears all APU registers (FF10–FF51) instantly. Wave RAM is unaffected.
+- `NR51_REG` (FF25) = channel panning; `0xFF` = all channels on both speakers.
+- `NR50_REG` (FF24) = master volume; `0x77` = max (7 left, 7 right). Bit 7/3 = Vin panning (ignore).
+- hUGEDriver uses CH1 (pulse+sweep), CH2 (pulse), CH3 (wave), CH4 (noise).
+- **DAC enable — CH1/CH2/CH4:** DAC on when `NRx2 & 0xF8 != 0` (init volume ≠ 0 or envelope direction = add). Channel is silenced when DAC is off regardless of trigger.
+- **DAC enable — CH3:** controlled by NR30 bit 7 exclusively.
+- Timer periods: CH1/CH2 = `(2048-freq)*4`; CH3 = `(2048-freq)*2`.
+- Envelope/sweep period 0 treated as 8.
+- CH4 noise LFSR: clock shift ≥ 14 → no clocks (silence). 7-bit mode (NR43 bit 3 = 1) → more tonal noise.
+
+---
+
+## CH3 Wave RAM — Safe Access Rules
+
+**DMG hardware only (not an issue on CGB):** Re-triggering CH3 while it is actively reading Wave RAM corrupts the first 4 bytes of Wave RAM.
+
+Safe procedure for re-triggering CH3:
+1. Disable DAC: write 0 to NR30 (`NR30_REG = 0`)
+2. Write new Wave RAM data (FF30–FF3F)
+3. Re-enable DAC: write `0x80` to NR30
+4. Trigger: write trigger bit to NR34
+
+When NOT using hUGEDriver for CH3 (after `hUGE_mute_channel(HT_CH3, HT_CH_MUTE)`), follow this sequence to avoid corruption on real DMG hardware.
+
+Note: Wave RAM reads on DMG only work when the channel is actively reading that byte. CGB allows Wave RAM access any time.
+
+---
+
+## Model Differences (DMG vs CGB)
+
+| Behavior | DMG | CGB |
+|----------|-----|-----|
+| Wave RAM access while CH3 active | Read only works within a couple clocks of wave read | Any time |
+| CH3 retrigger without disabling NR30 | Corrupts first 4 bytes of wave RAM | Works normally |
+| Length counters at power-off | Preserved, can be written while off | Zero'd at power-on |
+| High-pass filter charge factor | 0.999958 | 0.998943 (MGB same as CGB) |
 
 ---
 
