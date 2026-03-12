@@ -52,12 +52,17 @@ Or load `build/wasteland-racer.gb` in any GB/GBC emulator ([Emulicious](https://
 | Camera | `src/camera.c/.h` | Scrolling ring-buffer VRAM streaming, `move_bkg()` |
 | Sprite pool | `src/sprite_pool.c/.h` | OAM slot management |
 | Dialog | `src/dialog.c/.h`, `src/dialog_data.c/.h` | NPC conversation trees, branching choices, per-NPC flags |
+| HUD | `src/hud.c/.h` | On-screen display elements |
+| Music | `src/music.c/.h`, `src/music_data.c/.h` | hUGEDriver music playback |
+| Overmap | `src/state_overmap.c/.h`, `src/overmap_map.c`, `src/overmap_tiles.c` | World overmap navigation |
+| Hub | `src/state_hub.c/.h`, `src/hub_data.c/.h` | City hub menu, NPC list, hub entry/exit |
+| NPC portraits | `src/npc_*_portrait.c/.h` | Per-NPC portrait tile data |
 | Input | `src/input.h` | Key tick/press/release/debounce helpers |
 | Config | `src/config.h` | Capacity constants (`MAX_NPCS`, etc.) |
 
 ### Game States
 
-`STATE_INIT` → `STATE_TITLE` → `STATE_PLAYING` → `STATE_GAME_OVER`
+`STATE_INIT` → `STATE_TITLE` → `STATE_OVERMAP` → `STATE_HUB` / `STATE_PLAYING` → `STATE_GAME_OVER`
 
 ### VBlank Frame Order
 
@@ -105,6 +110,16 @@ gmb-wasteland-racer/
 │   ├── camera.c/.h         # Scrolling camera with VRAM ring buffer
 │   ├── dialog.c/.h         # NPC dialog engine
 │   ├── dialog_data.c/.h    # NPC dialog content
+│   ├── hud.c/.h            # On-screen display
+│   ├── music.c/.h          # hUGEDriver music playback
+│   ├── music_data.c/.h     # Song data
+│   ├── state_overmap.c/.h  # World overmap navigation state
+│   ├── overmap_map.c       # Generated overmap tile array
+│   ├── overmap_tiles.c     # Generated overmap tile pixel data
+│   ├── state_hub.c/.h      # City hub menu state
+│   ├── hub_data.c/.h       # Hub / NPC data definitions
+│   ├── npc_*_portrait.c/.h # NPC portrait tile data
+│   ├── debug.h             # Debug macros (EMU_printf etc.)
 │   ├── input.h             # Key tick/press/release helpers
 │   └── config.h            # Capacity constants (MAX_NPCS, etc.)
 ├── assets/
@@ -118,14 +133,20 @@ gmb-wasteland-racer/
 ├── tests/                # Unity unit tests (gcc, no hardware needed)
 │   ├── test_player.c
 │   ├── test_player_physics.c
+│   ├── test_terrain_physics.c
 │   ├── test_track.c
 │   ├── test_camera.c
 │   ├── test_dialog.c
 │   ├── test_gamestate.c
+│   ├── test_hud.c
 │   ├── test_input.c
+│   ├── test_overmap.c
 │   ├── test_sprite_pool.c
 │   ├── test_state_manager.c
 │   ├── test_soa_convention.c
+│   ├── test_hub_data.c
+│   ├── test_state_hub.c
+│   ├── test_debug.c
 │   ├── mocks/            # Stub GBDK headers for host-side compilation
 │   └── unity/            # Unity test framework (vendored)
 ├── docs/                 # Design documents

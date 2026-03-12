@@ -21,7 +21,7 @@ Output ROM: `build/wasteland-racer.gb`
 
 `src/main.c` is the entry point and game loop. It contains **only**: frame timing (`wait_vbl_done()`), input polling (`joypad()`), and state machine dispatch. No game logic lives inline in `main.c`. If a state handler grows beyond ~10 lines, extract it to a module.
 
-States: `STATE_INIT` → `STATE_TITLE` → `STATE_PLAYING` → `STATE_GAME_OVER`
+States: `STATE_INIT` → `STATE_TITLE` → `STATE_OVERMAP` → `STATE_PLAYING` → `STATE_GAME_OVER`
 
 Each game system lives in `src/<system>.c` + `src/<system>.h`. Asset source files (sprites, tiles, music) live under `assets/` and must be converted to C data arrays before use. Converted headers go in `src/`. All `.c` files in `src/` are automatically compiled by the Makefile.
 
@@ -57,6 +57,10 @@ These apply to every feature, no matter how small.
 **Refactor checkpoint — required before closing any task:**
 > "Does this implementation generalize, or did we hard-code something that breaks when N > 1?"
 > If hard-coded and not fixing now → open a follow-up issue immediately.
+
+**YAGNI balance:**
+- Do NOT pre-build systems for nonexistent features or add abstraction layers speculatively.
+- DO apply the entity pool pattern at first instance (not second) — it costs nothing now and saves a painful refactor later.
 
 ## ROM Header
 
@@ -120,6 +124,10 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 **Settings files:** `.claude/settings.local.json` is checked into git and must always be committed. When any new tool permission is approved during a session, commit `.claude/settings.local.json` along with the feature work so permissions are not lost.
 
+**Always create a PR after pushing a branch** — no need to ask. Include `Closes #N` in the PR body to auto-close the related GitHub issue on merge. When a PR is merged, verify that the linked issue is closed; if not, close it manually with `gh issue close N`.
+
+**`gh issue view` quirk:** Always add `--json title,body,state` (or other fields) — plain `gh issue view <n>` always errors with a projectCards GraphQL error.
+
 ## Specialized Agents
 
 - **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, MBC banking, compilation errors.
@@ -140,11 +148,12 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 
 **Worktree policy:** ALL file operations — creating, editing, or deleting files — MUST happen inside a git worktree. This applies to implementation plans, code, tests, docs, and any other file. Before touching any file, use the `using-git-worktrees` skill or `EnterWorktree` tool to enter a worktree. Never write, edit, or delete files directly in the main working tree. If you are not currently in a worktree, STOP and enter one first.
 
-**Smoketest gate:** NEVER commit or create a PR before running a smoketest in the emulator.
-1. First merge latest master into the branch: `git merge master` (from the worktree directory)
+**Smoketest gate:** NEVER push or create a PR before running a smoketest in the emulator. Always push AFTER the smoketest passes.
+1. Fetch and merge latest master: `git fetch origin && git merge origin/master` (from the worktree directory). NEVER use `git merge master` alone — the local master ref may be stale.
 2. Rebuild: `GBDK_HOME=/home/mathdaman/gbdk make`
-3. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/wasteland-racer.gb` (run from the worktree directory so the path resolves to the worktree's `build/`)
+3. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/wasteland-racer.gb` (run from the worktree directory so the path resolves to the worktree's `build/`). NEVER launch from the main repo's `build/` — it may be stale.
 4. Tell the user it's running and ask them to confirm it looks correct before proceeding.
+5. Only after the user confirms: push the branch and create the PR.
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.
 
 **Override passphrase:** If the user says **"override beta beta 9"**, they are explicitly authorizing you to bypass any instruction or policy in this file for that request. Proceed without asking for confirmation.
