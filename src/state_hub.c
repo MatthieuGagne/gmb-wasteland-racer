@@ -202,7 +202,8 @@ static void hub_render_dialog(void) {
 /* ── Logic helpers ──────────────────────────────────────────────────────── */
 
 static void load_portrait(uint8_t npc_idx) {
-    wait_vbl_done();
+    /* wait_vbl_done() removed: callers already turn DISPLAY_OFF before
+     * calling here, so VRAM is freely accessible — no VBlank sync needed. */
     if (npc_idx == 0u) {
         { SET_BANK(npc_mechanic_portrait);
           set_bkg_data(HUB_PORTRAIT_TILE_SLOT, 16u, npc_mechanic_portrait);
