@@ -1,6 +1,6 @@
 ---
 name: emulicious-debug
-description: Use when debugging the Junk Runner ROM in Emulicious — EMU_printf output, step-through debugging, breakpoints, memory/tile/sprite inspection, tracer, profiler, or romusage analysis.
+description: "TRIGGER when: any runtime crash, unexpected in-game behavior, visual glitch, wrong values at runtime, or need to inspect memory/tiles/sprites/palettes/ROM layout during execution. DO NOT TRIGGER when: the problem is a compile error (use gbdk-expert) or static code review (use gb-c-optimizer)."
 ---
 
 # Emulicious Debugging — Junk Runner

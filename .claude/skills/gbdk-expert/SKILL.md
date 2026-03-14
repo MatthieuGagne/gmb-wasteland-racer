@@ -1,6 +1,6 @@
 ---
 name: gbdk-expert
-description: Use when writing or reviewing GBDK-2020 code — API calls, hardware registers, sprite/tile/palette setup, VBlank timing, CGB color palettes, interrupt handling, MBC banking, or GBDK compilation errors. Use during planning to verify API names and constraints before writing tests.
+description: "TRIGGER when: writing or editing any src/*.c or src/*.h file, using GBDK API functions, touching hardware registers, sprite/tile/palette/VBlank/interrupt/banking code, or hitting a GBDK compilation error. DO NOT TRIGGER when: editing Python pipeline scripts, Tiled maps, Makefile, or any non-C work."
 ---
 
 # GBDK Expert — Junk Runner
