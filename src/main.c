@@ -31,12 +31,15 @@ static void init_palettes(void) {
     }
 }
 
-static volatile uint8_t vbl_count = 0;
+static volatile uint8_t frame_ready = 0;
 
 static void vbl_isr(void) {
-    vbl_count++;
+    frame_ready = 1;
     move_bkg(0, (uint8_t)cam_y);
-    /* music_tick stays in main context — no SET_BANK/SWITCH_ROM in ISR */
+    /* music_tick is safe here: music.c is in bank 0 (fixed), so SET_BANK
+     * inside music_tick saves/restores whatever bank the main loop had active
+     * on the stack — no aliasing with main-code _saved_bank locals. */
+    music_tick();
 }
 
 void main(void) {
@@ -54,11 +57,9 @@ void main(void) {
     state_push(&state_title);
 
     while (1) {
-        uint8_t ticks;
-        while (!vbl_count);
-        __critical { ticks = vbl_count; vbl_count = 0; }
-        while (ticks--) music_tick();  /* once per pending VBL, catches up after long frames */
+        while (!frame_ready);
+        frame_ready = 0;
         input_update();           /* saves prev frame, reads joypad() */
-        state_manager_update();   /* no longer passes raw joypad byte */
+        state_manager_update();
     }
 }
