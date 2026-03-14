@@ -52,6 +52,26 @@ void test_a_on_leave_does_not_enter_dialog(void) {
     TEST_ASSERT_NOT_EQUAL(1u, hub_get_sub_state());
 }
 
+void test_render_wrapped_returns_zero_when_text_fits(void) {
+    /* Short text: fits in 5 rows × 12 cols → returns 0 */
+    uint8_t resume = render_wrapped("Short text.", 7u, 2u, 12u, 5u, 0u);
+    TEST_ASSERT_EQUAL_UINT8(0u, resume);
+}
+
+void test_render_wrapped_returns_nonzero_offset_on_overflow(void) {
+    /* Text long enough to overflow 5 rows at width 12 → returns non-zero */
+    const char *long_text =
+        "word1 word2 word3 word4 word5 word6 word7 word8 "
+        "word9 word10 word11 word12 word13 word14 word15";
+    uint8_t resume = render_wrapped(long_text, 7u, 2u, 12u, 5u, 0u);
+    TEST_ASSERT_NOT_EQUAL(0u, resume);
+    /* Rendering from resume offset should eventually return 0 */
+    {
+        uint8_t done = render_wrapped(long_text, 7u, 2u, 12u, 5u, resume);
+        TEST_ASSERT_EQUAL_UINT8(0u, done);
+    }
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_enter_clears_hub_entered_flag);
@@ -62,5 +82,7 @@ int main(void) {
     RUN_TEST(test_cursor_down_clamped_at_leave);
     RUN_TEST(test_a_on_npc_enters_dialog_substate);
     RUN_TEST(test_a_on_leave_does_not_enter_dialog);
+    RUN_TEST(test_render_wrapped_returns_zero_when_text_fits);
+    RUN_TEST(test_render_wrapped_returns_nonzero_offset_on_overflow);
     return UNITY_END();
 }

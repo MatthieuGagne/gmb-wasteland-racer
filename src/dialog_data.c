@@ -14,7 +14,7 @@
  *   5 (narration)  -> END
  *   6 (narration)  -> END
  */
-static const char m0[] = "Greetings, racer. Ready to talk?";
+static const char m0[] = "Roads. Parts. Sharp. Racer. Grease. Caps.";
 static const char m1[] = "What's on your mind?";
 static const char m2[] = "The circuit is brutal. Stay sharp.";
 static const char m3[] = "I've got parts if you've got caps.";
