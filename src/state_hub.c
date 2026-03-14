@@ -229,12 +229,10 @@ static void hub_start_dialog(uint8_t npc_cursor) {
       dialog_start(npc_id, &npc_dialogs[npc_id]);
       RESTORE_BANK(); }
     sub_state = HUB_SUB_DIALOG;
-    wait_vbl_done();
-    DISPLAY_OFF;
+    wait_vbl_done(); /* sync to VBlank; writes complete well within ~1ms window */
     cls();
     load_portrait(npc_cursor);
     hub_render_dialog();
-    DISPLAY_ON;
 }
 
 static void update_menu(void) {
@@ -281,18 +279,14 @@ static void update_dialog(void) {
         dialog_cursor      = 0u;
         dialog_prev_cursor = 0u;
         if (more) {
-            wait_vbl_done();
-            DISPLAY_OFF;
+            wait_vbl_done(); /* sync to VBlank; tile-map writes fit in ~1ms window */
             cls();
             hub_render_dialog();
-            DISPLAY_ON;
         } else {
             sub_state = HUB_SUB_MENU;
             cursor    = 0u;
-            wait_vbl_done();
-            DISPLAY_OFF;
+            wait_vbl_done(); /* sync to VBlank; tile-map writes fit in ~1ms window */
             hub_render_menu();
-            DISPLAY_ON;
         }
     }
 }
