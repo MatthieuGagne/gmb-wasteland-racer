@@ -13,6 +13,7 @@
 #include "npc_mechanic_portrait.h"
 #include "npc_trader_portrait.h"
 #include "npc_drifter_portrait.h"
+#include "dialog_arrow_sprite.h"
 
 #define HUB_SUB_MENU   0u
 #define HUB_SUB_DIALOG 1u
@@ -28,6 +29,8 @@ static const HubDef     *hub;
 static char              dialog_text_buf[64]; /* WRAM — copy banked text here before printf */
 static char              dialog_name_buf[16]; /* WRAM — copy banked NPC name here before printf */
 static uint8_t           dialog_prev_cursor;  /* last drawn cursor position for dirty update */
+static uint8_t           dialog_page_start;   /* char offset of currently-shown page (0 = beginning) */
+static uint8_t           dialog_next_offset;  /* return of last render_wrapped; 0 = no overflow */
 
 uint8_t hub_get_cursor(void)    { return cursor; }
 uint8_t hub_get_sub_state(void) { return sub_state; }
@@ -50,16 +53,20 @@ static void hub_render_menu(void) {
 }
 
 /* Renders word-wrapped text starting at (start_col, start_row).
- * width is max chars per line. max_rows limits output rows. */
-static void render_wrapped(const char *text, uint8_t start_col, uint8_t start_row,
-                            uint8_t width, uint8_t max_rows) {
+ * width is max chars per line. max_rows limits output rows.
+ * start_char: byte offset into text to begin rendering (0 = beginning).
+ * Returns 0 if all text was rendered; non-zero offset where next page starts. */
+uint8_t render_wrapped(const char *text, uint8_t start_col, uint8_t start_row,
+                        uint8_t width, uint8_t max_rows, uint8_t start_char) {
     static char word[20]; /* off-stack: WRAM buffer — re-entrancy via ISR
                            * is not possible here (input-driven, not ISR-driven) */
-    uint8_t row      = start_row;
-    uint8_t col      = start_col;
-    uint8_t wi       = 0u;  /* index into current word */
-    uint8_t si       = 0u;  /* index into source text */
-    uint8_t line_len = 0u;
+    uint8_t row        = start_row;
+    uint8_t col        = start_col;
+    uint8_t wi         = 0u;  /* index into current word */
+    uint8_t si         = start_char;  /* index into source text */
+    uint8_t line_len   = 0u;
+    uint8_t word_start = start_char;  /* char offset where current word began */
+    uint8_t finished   = 0u;
 
     while (row < start_row + max_rows) {
         char ch = text[si];
@@ -81,9 +88,11 @@ static void render_wrapped(const char *text, uint8_t start_col, uint8_t start_ro
                 wi        = 0u;
                 if (ch == ' ') { col++; line_len++; } /* account for space */
             }
-            if (ch == '\0') break;
+            if (ch == '\0') { finished = 1u; break; }
             si++;
+            word_start = si;  /* next word starts after this space */
         } else {
+            if (wi == 0u) { word_start = si; }  /* record start of new word */
             /* accumulate character into word */
             word[wi++] = ch;
             /* force-break words longer than width */
@@ -95,10 +104,12 @@ static void render_wrapped(const char *text, uint8_t start_col, uint8_t start_ro
                 row++;
                 col      = start_col;
                 line_len = 0u;
+                word_start = (uint8_t)(si + 1u);
             }
             si++;
         }
     }
+    return finished ? 0u : word_start;
 }
 
 static void hub_render_dialog(void) {
@@ -168,10 +179,19 @@ static void hub_render_dialog(void) {
     printf(":");
 
     /* --- Word-wrap dialog text into inner cols 7-18, rows 2-6 --- */
-    render_wrapped(dialog_text_buf, 7u, 2u, DIALOG_INNER_W, 5u);
+    dialog_next_offset = render_wrapped(dialog_text_buf, 7u, 2u, DIALOG_INNER_W, 5u, dialog_page_start);
 
-    /* --- Draw choices or continue indicator --- */
+    /* --- Show or hide overflow arrow OAM sprite (OAM slot 2, screen tile (18,6)) --- */
+    /* BG tile (18,6) = screen pixel (144,48); OAM coords add +8 x, +16 y */
+    if (dialog_next_offset != 0u) {
+        move_sprite(DIALOG_ARROW_OAM_SLOT, 152u, 64u);
+    } else {
+        move_sprite(DIALOG_ARROW_OAM_SLOT, 0u, 0u);
+    }
+
+    /* --- Draw choices or continue indicator (only on last page) --- */
     num_choices = dialog_get_num_choices();
+    if (dialog_next_offset == 0u) {
     if (num_choices == 0u) {
         /* Narration: show > continue indicator (no key label) */
         gotoxy(0u, 9u);
@@ -197,6 +217,7 @@ static void hub_render_dialog(void) {
         printf(">");
         dialog_prev_cursor = dialog_cursor;
     }
+    } /* end if (dialog_next_offset == 0u) */
 }
 
 /* ── Logic helpers ──────────────────────────────────────────────────────── */
@@ -223,6 +244,8 @@ static void hub_start_dialog(uint8_t npc_cursor) {
     active_npc         = npc_cursor;
     dialog_cursor      = 0u;
     dialog_prev_cursor = 0u;
+    dialog_page_start  = 0u;
+    dialog_next_offset = 0u;
     npc_id = hub->npc_dialog_ids[npc_cursor];
     { SET_BANK(npc_dialogs);
       dialog_start(npc_id, &npc_dialogs[npc_id]);
@@ -258,7 +281,7 @@ static void update_menu(void) {
 static void update_dialog(void) {
     uint8_t num_choices = dialog_get_num_choices();
     uint8_t more;
-    if (num_choices > 0u) {
+    if (num_choices > 0u && dialog_next_offset == 0u) {
         if (KEY_TICKED(J_UP) && dialog_cursor > 0u) {
             dialog_cursor--;
             /* dirty cursor: erase old >, draw new > — 2 tile writes */
@@ -276,22 +299,37 @@ static void update_dialog(void) {
         }
     }
     if (KEY_TICKED(J_A) || KEY_TICKED(J_START)) {
-        more = dialog_advance(dialog_cursor);
-        dialog_cursor      = 0u;
-        dialog_prev_cursor = 0u;
-        if (more) {
+        if (dialog_next_offset != 0u) {
+            /* advance to next page */
+            dialog_page_start  = dialog_next_offset;
+            dialog_cursor      = 0u;
+            dialog_prev_cursor = 0u;
             wait_vbl_done();
             DISPLAY_OFF;
             cls();
             hub_render_dialog();
             DISPLAY_ON;
         } else {
-            sub_state = HUB_SUB_MENU;
-            cursor    = 0u;
-            wait_vbl_done();
-            DISPLAY_OFF;
-            hub_render_menu();
-            DISPLAY_ON;
+            /* last page — advance dialog node (existing behavior) */
+            more = dialog_advance(dialog_cursor);
+            dialog_cursor      = 0u;
+            dialog_prev_cursor = 0u;
+            dialog_page_start  = 0u;
+            dialog_next_offset = 0u;
+            if (more) {
+                wait_vbl_done();
+                DISPLAY_OFF;
+                cls();
+                hub_render_dialog();
+                DISPLAY_ON;
+            } else {
+                sub_state = HUB_SUB_MENU;
+                cursor    = 0u;
+                wait_vbl_done();
+                DISPLAY_OFF;
+                hub_render_menu();
+                DISPLAY_ON;
+            }
         }
     }
 }
@@ -306,9 +344,16 @@ static void enter(void) {
     active_npc         = 0u;
     dialog_cursor      = 0u;
     dialog_prev_cursor = 0u;
+    dialog_page_start  = 0u;
+    dialog_next_offset = 0u;
     move_sprite(0u, 0u, 0u);
     move_sprite(1u, 0u, 0u);
+    move_sprite(DIALOG_ARROW_OAM_SLOT, 0u, 0u);
     wait_vbl_done();
+    { SET_BANK(dialog_arrow_tile_data);
+      set_sprite_data(DIALOG_ARROW_TILE_BASE, dialog_arrow_tile_data_count, dialog_arrow_tile_data);
+      RESTORE_BANK(); }
+    set_sprite_tile(DIALOG_ARROW_OAM_SLOT, DIALOG_ARROW_TILE_BASE);
     DISPLAY_OFF;
     cls();
     hub_render_menu();

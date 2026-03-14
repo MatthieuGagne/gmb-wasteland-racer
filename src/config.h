@@ -5,8 +5,15 @@
  * not AoS (struct arrays). See CLAUDE.md "Entity management" for rationale. */
 
 #define MAX_NPCS     6
-/* OAM budget: player=2 (top+bottom half), remaining=38 for enemies/projectiles/HUD */
+/* OAM budget: player=2 (top+bottom half), slot 2=dialog_arrow HUD, remaining=37 for enemies/projectiles */
 #define MAX_SPRITES  40
+
+/* Sprite VRAM tile slots */
+#define PLAYER_TILE_BASE       0u  /* tiles 0-1: player car (2 tiles) */
+#define DIALOG_ARROW_TILE_BASE 2u  /* tile  2:   dialog overflow arrow (1 tile) */
+
+/* OAM slot assignments (fixed HUD sprites) */
+#define DIALOG_ARROW_OAM_SLOT  2u  /* OAM slot 2 — hub dialog overflow indicator */
 
 /* Player physics — these will become per-gear values when gears are added */
 #define PLAYER_ACCEL      1
