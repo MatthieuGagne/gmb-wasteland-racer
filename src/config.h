@@ -5,8 +5,8 @@
  * not AoS (struct arrays). See CLAUDE.md "Entity management" for rationale. */
 
 #define MAX_NPCS     6
-/* OAM budget: player=2 (top+bottom half), slot 2=dialog_arrow HUD, remaining=37 for enemies/projectiles */
-#define MAX_SPRITES  40
+/* OAM budget: player=2 (top+bottom half), slot 2=dialog_arrow HUD, remaining=13 for enemies/projectiles */
+#define MAX_SPRITES  16
 
 /* Sprite VRAM tile slots */
 #define PLAYER_TILE_BASE       0u  /* tiles 0-1: player car (2 tiles) */
