@@ -128,13 +128,26 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 **`gh issue view` quirk:** Always add `--json title,body,state` (or other fields) — plain `gh issue view <n>` always errors with a projectCards GraphQL error.
 
-## Specialized Agents
+## Skills & Agents
+
+### Agents (in `.claude/agents/`, invoked with the Agent tool)
 
 - **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, MBC banking, compilation errors.
 - **`gb-c-optimizer`** — C code review for GBC performance/ROM size, anti-pattern detection, SDCC optimization.
-- **`/map-expert`** — Map pipeline: Tiled TMX format, Python converters (`tmx_to_c`, `png_to_tiles`), GB BG tilemap hardware. Use when creating or modifying maps. **Update this skill in the same PR** whenever the pipeline changes.
-- **`/sprite-expert`** — Sprite pipeline: Aseprite authoring, `png_to_tiles.py`, sprite pool, OAM API, CGB palette for sprites, coordinate system. Use when creating or modifying sprites. **Update this skill in the same PR** whenever the sprite system changes.
-- **`/aseprite`** — Aseprite CLI reference: all `--batch` flags, sprite sheet export, layer/tag filtering, color mode conversion, scripting. **ALWAYS invoke before running any `aseprite` command.**
+- **`gb-memory-validator`** — Validates all four GB hardware memory budgets (ROM, WRAM, VRAM, OAM). Run after every successful build, before smoketest/PR.
+- **`map-builder`** — End-to-end map creation: Tiled layout, TMX conversion pipeline, wiring generated C files into the game.
+- **`sprite-builder`** — End-to-end sprite creation: Aseprite source, PNG export, `png_to_tiles`, OAM slots, tile data loading, in-game rendering.
+
+### Skills (in `.claude/skills/`, invoked with the Skill tool)
+
+- **`map-expert`** — Map pipeline reference: Tiled TMX format, Python converters (`tmx_to_c`, `png_to_tiles`), GB BG tilemap hardware. Use when creating or modifying maps. **Update this skill in the same PR** whenever the pipeline changes.
+- **`sprite-expert`** — Sprite pipeline reference: Aseprite authoring, `png_to_tiles.py`, sprite pool, OAM API, CGB palette for sprites, coordinate system. Use when creating or modifying sprites. **Update this skill in the same PR** whenever the sprite system changes.
+- **`aseprite`** — Aseprite CLI reference: all `--batch` flags, sprite sheet export, layer/tag filtering, color mode conversion, scripting. **ALWAYS invoke before running any `aseprite` command.**
+- **`emulicious-debug`** — Step-through debugger, breakpoints, `EMU_printf`, memory/tile/sprite inspection, tracer, profiler, romusage.
+- **`music-expert`** — Music driver integration, hUGEDriver patterns, music_tick placement, bank-safe calls.
+- **`build`** — Build verification gate: compile the ROM and confirm no errors.
+- **`test`** — TDD red/green gate: run host-side unit tests with gcc + Unity.
+- **`prd`** — Create a GitHub issue with a PRD for a new feature.
 
 ## Workflow
 
@@ -151,9 +164,15 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 **Smoketest gate:** NEVER push or create a PR before running a smoketest in the emulator. Always push AFTER the smoketest passes.
 1. Fetch and merge latest master: `git fetch origin && git merge origin/master` (from the worktree directory). NEVER use `git merge master` alone — the local master ref may be stale.
 2. Rebuild: `GBDK_HOME=/home/mathdaman/gbdk make`
-3. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/junk-runner.gb` (run from the worktree directory so the path resolves to the worktree's `build/`). NEVER launch from the main repo's `build/` — it may be stale.
-4. Tell the user it's running and ask them to confirm it looks correct before proceeding.
-5. Only after the user confirms: push the branch and create the PR.
+3. Run `gb-memory-validator` agent — if any budget is FAIL, stop and fix before continuing.
+4. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/junk-runner.gb` (run from the worktree directory so the path resolves to the worktree's `build/`). NEVER launch from the main repo's `build/` — it may be stale.
+5. Tell the user it's running and ask them to confirm it looks correct before proceeding.
+6. Only after the user confirms: push the branch and create the PR.
+
+**GB skill gates (mandatory):**
+- Before writing any `src/*.c` or `src/*.h` file → invoke `gbdk-expert`
+- When debugging any runtime issue → invoke `emulicious-debug`
+
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.
 
 **Override passphrase:** If the user says **"override beta beta 9"**, they are explicitly authorizing you to bypass any instruction or policy in this file for that request. Proceed without asking for confirmation.
