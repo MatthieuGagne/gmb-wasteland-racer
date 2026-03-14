@@ -15,9 +15,11 @@ static void stream_row(uint8_t world_ty) {
     uint8_t tx;
     uint8_t vram_y = world_ty & 31u;
 
-    for (tx = 0u; tx < MAP_TILES_W; tx++) {
-        row_buf[tx] = track_map[(uint16_t)world_ty * MAP_TILES_W + tx];
-    }
+    { SET_BANK(track_map);
+      for (tx = 0u; tx < MAP_TILES_W; tx++) {
+          row_buf[tx] = track_map[(uint16_t)world_ty * MAP_TILES_W + tx];
+      }
+      RESTORE_BANK(); }
     set_bkg_tiles(0u, vram_y, MAP_TILES_W, 1u, row_buf);
 }
 
