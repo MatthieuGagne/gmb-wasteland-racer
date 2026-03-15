@@ -167,7 +167,14 @@ def png_to_c(png_path, out_path, array_name, bank):
         "#include <stdint.h>",
         "#include \"banking.h\"",
         "",
-        f"BANKREF({array_name})",
+        "/* Bank reference: points to this data's bank, not a CODE function.",
+        "   Using __asm instead of BANKREF() keeps this file pure LIT (no CODE",
+        "   section), so bankpack never assigns it to the CODE bank (bank 1). */",
+        "__asm",
+        f"    ___bank_{array_name} = b__{array_name}",
+        f"    .globl ___bank_{array_name}",
+        "__endasm;",
+        "",
         f"const uint8_t {array_name}[] = {{",
     ]
 

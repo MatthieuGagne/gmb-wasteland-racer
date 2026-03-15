@@ -121,7 +121,7 @@ class TestPngToC(unittest.TestCase):
             png_path = pf.name
         with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
             c_path = cf.name
-        png_to_c(png_path, c_path, 'my_tiles')
+        png_to_c(png_path, c_path, 'my_tiles', bank=255)
         with open(c_path) as f:
             src = f.read()
         self.assertIn('my_tiles[]', src)
@@ -136,10 +136,28 @@ class TestPngToC(unittest.TestCase):
             png_path = pf.name
         with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
             c_path = cf.name
-        png_to_c(png_path, c_path, 'tiles')
+        png_to_c(png_path, c_path, 'tiles', bank=255)
         with open(c_path) as f:
             src = f.read()
         self.assertIn('tiles_count = 2', src)
+
+    def test_bank_ref_uses_data_symbol(self):
+        """Generated C uses __asm bank ref pointing to data, not BANKREF function."""
+        data = _make_indexed_png(8, 8, [1] * 64)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as pf:
+            pf.write(data)
+            png_path = pf.name
+        with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
+            c_path = cf.name
+        png_to_c(png_path, c_path, 'my_tiles', bank=255)
+        with open(c_path) as f:
+            src = f.read()
+        # Must use data-referenced bank symbol, not BANKREF function
+        self.assertIn('___bank_my_tiles = b__my_tiles', src)
+        self.assertIn('.globl ___bank_my_tiles', src)
+        # Must NOT emit BANKREF function (which would create a CODE section)
+        self.assertNotIn('BANKREF(my_tiles)', src)
+        self.assertNotIn('__func_my_tiles', src)
 
 
 if __name__ == '__main__':
