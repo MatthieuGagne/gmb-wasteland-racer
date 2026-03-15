@@ -141,8 +141,8 @@ class TestPngToC(unittest.TestCase):
             src = f.read()
         self.assertIn('tiles_count = 2', src)
 
-    def test_bank_ref_uses_data_symbol(self):
-        """Generated C uses __asm bank ref pointing to data, not BANKREF function."""
+    def test_bank_ref_uses_volatile_at(self):
+        """Generated C uses volatile __at(bank) uint8_t, not BANKREF function."""
         data = _make_indexed_png(8, 8, [1] * 64)
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as pf:
             pf.write(data)
@@ -152,9 +152,8 @@ class TestPngToC(unittest.TestCase):
         png_to_c(png_path, c_path, 'my_tiles', bank=255)
         with open(c_path) as f:
             src = f.read()
-        # Must use data-referenced bank symbol, not BANKREF function
-        self.assertIn('___bank_my_tiles = b__my_tiles', src)
-        self.assertIn('.globl ___bank_my_tiles', src)
+        # Must use volatile __at() bank symbol — no CODE section created
+        self.assertIn('volatile __at(255) uint8_t __bank_my_tiles;', src)
         # Must NOT emit BANKREF function (which would create a CODE section)
         self.assertNotIn('BANKREF(my_tiles)', src)
         self.assertNotIn('__func_my_tiles', src)
