@@ -17,7 +17,7 @@ description: Use when the ROM shows a blank screen at low FPS (~2 FPS), when que
 |------|-------|-------|
 | ROM_0 | ~46% | Fixed/HOME code, always mapped |
 | ROM_1 | ~100% | All autobanked modules — overflows naturally into bank 2+ |
-| ROM_2 | ~5%  | Autobank overflow + portrait data (explicit `#pragma bank 2`) |
+| ROM_2 | ~5%  | Autobank overflow (portraits, tiles, maps all `#pragma bank 255`) |
 
 Total autobanked data: ~16,370 + 788 bytes across banks 1–2 (MBC5, 16 banks declared).
 
@@ -35,27 +35,21 @@ grep "024[0-9A-Fa-f]\{3\}" build/nuke-raider.map
 
 If `_state_ti`, `_state_hu`, `_state_pl`, `_state_ov` appear at `0x024xxx` addresses, bank 1 overflowed and the game will crash at boot.
 
-## Fix: Move Data Files to Explicit Banks
+## Fix: Bank Overflow with MBC5 + 16 Banks
 
-Data-only assets (portraits, tilesets, maps) must NOT use `#pragma bank 255` — that puts them in the autobank pool competing with state code for bank 1 space.
+All files use `#pragma bank 255` — bankpack fills bank 1, then overflows to banks 2, 3, etc. automatically. No manual bank assignments needed for data assets.
 
-```c
-// ❌ BAD — competes with state code for bank 1
-#pragma bank 255
+The only fix needed if state code overflows bank 1 is to ensure there is room — with 16 banks declared, bankpack has space to place data in higher banks, keeping bank 1 for state code.
 
-// ✅ GOOD — goes directly to bank 2, never touches bank 1
-#pragma bank 2
-```
-
-`BANKREF` / `BANK()` / `SET_BANK()` resolve correctly at link time regardless of whether the file uses `255` or an explicit number. No changes needed in callers or headers.
+`BANKREF` / `BANK()` / `SET_BANK()` resolve correctly at link time regardless of which bank a file lands in — no changes needed in callers.
 
 ## Asset Banking Rules
 
 | Asset type | Pragma | Reason |
 |------------|--------|--------|
-| `npc_*_portrait.c` | `#pragma bank 2` | Pure data, large |
-| `*_tiles.c` (generated) | `#pragma bank 2` | Pure data, large |
-| `*_map.c` (generated) | `#pragma bank 2` | Pure data, large |
+| `npc_*_portrait.c` | `#pragma bank 255` | Autobanked — bankpack places in bank 2+ naturally |
+| `*_tiles.c` (generated) | `#pragma bank 255` | Autobanked — bankpack places in bank 2+ naturally |
+| `*_map.c` (generated) | `#pragma bank 255` | Autobanked — bankpack places in bank 2+ naturally |
 | State modules (`state_*.c`) | `#pragma bank 255` | Must stay in bank 1 with state_manager |
 | Music data | check — may be large | If bank 1 is tight, move to explicit bank |
 
@@ -64,14 +58,14 @@ Data-only assets (portraits, tilesets, maps) must NOT use `#pragma bank 255` —
 1. Build: `GBDK_HOME=/home/mathdaman/gbdk make`
 2. Check bank 1: `romusage build/nuke-raider.gb -a` → if bank 1 ≥ 95%, act now
 3. Check for state code overflow: `grep "024[0-9A-Fa-f]\{3\}" build/nuke-raider.map`
-4. If state code appears in bank 2+: find the largest new data file, change it to `#pragma bank 2`, rebuild
+4. If state code appears in bank 2+: this should not happen with 16 banks — investigate why bankpack is not overflowing data correctly
 
 ## Autobanker Behavior
 
-- `#pragma bank 255` → bankpack assigns automatically, fills bank 1 first, then bank 3+ if bank 2 is explicitly used
-- `#pragma bank 2` → linker places in bank 2 directly; bankpack does not touch it
-- Explicit and autobanked files coexist; bankpack fills auto-banks around the explicit ones
-- Bank 2 explicit data does **not** get mixed with bank 2 autobank overflow — autobank overflow goes to bank 3+
+- `#pragma bank 255` → bankpack assigns automatically, fills bank 1 first, then spills to bank 2, 3, etc.
+- All files (state code, data assets, portraits, tiles, maps) use `#pragma bank 255`
+- Bankpack fills banks sequentially — state code lands in bank 1, overflow data lands in bank 2+
+- With 16 banks declared (`-Wm-ya16`), there is ample room for growth without manual bank management
 
 ## Why BANKED Function Pointers Aren't the Fix
 
