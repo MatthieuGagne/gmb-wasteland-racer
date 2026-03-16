@@ -19,9 +19,9 @@ TEST_FLAGS   := -Itests/mocks -Itests/unity/src -Isrc -Ilib/hUGEDriver/include -
 TEST_LIB_SRC := $(filter-out src/main.c,$(wildcard src/*.c))
 MOCK_SRCS    := $(wildcard tests/mocks/*.c)
 
-.PHONY: all clean test test-tools export-sprites
+.PHONY: all clean test test-tools export-sprites bank-check
 
-all: $(TARGET)
+all: bank-check $(TARGET)
 
 # ── Generated sources ─────────────────────────────────────────────────────────
 # src/track_map.c is checked into git so CI works without Python/Tiled.
@@ -112,6 +112,9 @@ $(TARGET): src/overmap_map.c
 
 test-tools:
 	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c -v
+
+bank-check:
+	python3 tools/bank_check.py .
 
 clean:
 	rm -rf build/
