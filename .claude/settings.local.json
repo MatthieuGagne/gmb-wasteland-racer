@@ -183,7 +183,8 @@
       "Bash(/home/mathdaman/gbdk/bin/romusage /home/mathdaman/code/gmb-nuke-raider/.worktrees/pragma-255-everywhere/build/junk-runner.gb -a 2>/dev/null)",
       "Bash(/home/mathdaman/gbdk/bin/romusage /home/mathdaman/code/gmb-nuke-raider/.worktrees/pragma-255-everywhere/build/junk-runner.gb 2>/dev/null)",
       "Bash(sed:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(/home/mathdaman/gbdk/bin/romusage build/nuke-raider.gb -a | grep ROM && grep \"b_state_manager_init\" build/nuke-raider.noi)"
     ]
   }
 }

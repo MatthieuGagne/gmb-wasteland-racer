@@ -167,7 +167,11 @@ def png_to_c(png_path, out_path, array_name, bank):
         "#include <stdint.h>",
         "#include \"banking.h\"",
         "",
-        f"BANKREF({array_name})",
+        "/* Bank reference: volatile __at(bank) places the bank symbol in DATA (not CODE),",
+        "   so bankpack assigns it to the same bank as this file's data array.",
+        "   BANKREF() creates a CODE stub that bankpack may assign to a different bank. */",
+        f"volatile __at({bank}) uint8_t __bank_{array_name};",
+        "",
         f"const uint8_t {array_name}[] = {{",
     ]
 

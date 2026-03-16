@@ -121,7 +121,7 @@ class TestPngToC(unittest.TestCase):
             png_path = pf.name
         with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
             c_path = cf.name
-        png_to_c(png_path, c_path, 'my_tiles')
+        png_to_c(png_path, c_path, 'my_tiles', bank=255)
         with open(c_path) as f:
             src = f.read()
         self.assertIn('my_tiles[]', src)
@@ -136,10 +136,39 @@ class TestPngToC(unittest.TestCase):
             png_path = pf.name
         with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
             c_path = cf.name
-        png_to_c(png_path, c_path, 'tiles')
+        png_to_c(png_path, c_path, 'tiles', bank=255)
         with open(c_path) as f:
             src = f.read()
         self.assertIn('tiles_count = 2', src)
+
+    def test_bank_ref_uses_volatile_at_255(self):
+        """volatile __at(255) emitted for autobanked files — no BANKREF function."""
+        data = _make_indexed_png(8, 8, [1] * 64)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as pf:
+            pf.write(data)
+            png_path = pf.name
+        with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
+            c_path = cf.name
+        png_to_c(png_path, c_path, 'my_tiles', bank=255)
+        with open(c_path) as f:
+            src = f.read()
+        self.assertIn('volatile __at(255) uint8_t __bank_my_tiles;', src)
+        self.assertNotIn('BANKREF(my_tiles)', src)
+        self.assertNotIn('__func_my_tiles', src)
+
+    def test_bank_ref_uses_volatile_at_explicit_bank(self):
+        """volatile __at(N) emitted for explicit bank N — no BANKREF function."""
+        data = _make_indexed_png(8, 8, [1] * 64)
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as pf:
+            pf.write(data)
+            png_path = pf.name
+        with tempfile.NamedTemporaryFile(suffix='.c', delete=False, mode='w') as cf:
+            c_path = cf.name
+        png_to_c(png_path, c_path, 'my_tiles', bank=2)
+        with open(c_path) as f:
+            src = f.read()
+        self.assertIn('volatile __at(2) uint8_t __bank_my_tiles;', src)
+        self.assertNotIn('BANKREF(my_tiles)', src)
 
 
 if __name__ == '__main__':
