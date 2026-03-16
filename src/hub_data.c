@@ -13,3 +13,6 @@ const HubDef rust_town = {
     { npc_name_0, npc_name_1, npc_name_2 },
     { 0u, 1u, 2u }
 };
+
+const HubDef * const hub_table[] = { &rust_town };
+const uint8_t         hub_table_count = 1u;

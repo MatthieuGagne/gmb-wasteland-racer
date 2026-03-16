@@ -21,11 +21,20 @@ void test_rust_town_dialog_ids(void) {
     TEST_ASSERT_EQUAL_UINT8(2u, rust_town.npc_dialog_ids[2]);
 }
 
+void test_hub_table_count(void) {
+    TEST_ASSERT_EQUAL_UINT8(1u, hub_table_count);
+}
+void test_hub_table_index_zero_is_rust_town(void) {
+    TEST_ASSERT_EQUAL_PTR(&rust_town, hub_table[0]);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_rust_town_name);
     RUN_TEST(test_rust_town_num_npcs);
     RUN_TEST(test_rust_town_npc_names);
     RUN_TEST(test_rust_town_dialog_ids);
+    RUN_TEST(test_hub_table_count);
+    RUN_TEST(test_hub_table_index_zero_is_rust_town);
     return UNITY_END();
 }

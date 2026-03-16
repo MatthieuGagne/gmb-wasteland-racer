@@ -14,4 +14,7 @@ typedef struct {
 
 extern const HubDef rust_town;
 
+extern const HubDef * const hub_table[];
+extern const uint8_t         hub_table_count;
+
 #endif /* HUB_DATA_H */
