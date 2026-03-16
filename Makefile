@@ -58,6 +58,14 @@ src/player_sprite.c: assets/sprites/player_car.png tools/png_to_tiles.py
 
 $(TARGET): src/player_sprite.c
 
+# NPC portraits are pinned to --bank 2, NOT --bank 255 (autobank).
+# Rationale: bankpack fills bank 1 first; portraits would land in bank 1 and
+# push track_tile_data / player_tile_data to bank 2.  track_init() and
+# player_init() are BANKED functions in bank 1 that call SET_BANK() to reach
+# those assets — SET_BANK inside a banked function in the switchable window
+# (0x4000-0x7FFF) unmaps the executing code and crashes.  Pinning portraits
+# to bank 2 keeps the hot assets (track_tile_data, player_tile_data) in bank 1
+# alongside the code that accesses them, making SET_BANK a no-op there.
 src/npc_mechanic_portrait.c: assets/sprites/npc_mechanic.png tools/png_to_tiles.py
 	python3 tools/png_to_tiles.py --bank 2 assets/sprites/npc_mechanic.png src/npc_mechanic_portrait.c npc_mechanic_portrait
 
