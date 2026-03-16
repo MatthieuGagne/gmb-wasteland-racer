@@ -3,7 +3,11 @@
 #include <stdint.h>
 #include "banking.h"
 
-BANKREF(npc_trader_portrait)
+/* Bank reference: volatile __at(bank) places the bank symbol in DATA (not CODE),
+   so bankpack assigns it to the same bank as this file's data array.
+   BANKREF() creates a CODE stub that bankpack may assign to a different bank. */
+volatile __at(2) uint8_t __bank_npc_trader_portrait;
+
 const uint8_t npc_trader_portrait[] = {
     /* tile 0 */ 0x01, 0x01, 0x01, 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     /* tile 1 */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
