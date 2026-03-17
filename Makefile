@@ -19,7 +19,7 @@ TEST_FLAGS   := -Itests/mocks -Itests/unity/src -Isrc -Ilib/hUGEDriver/include -
 TEST_LIB_SRC := $(filter-out src/main.c,$(wildcard src/*.c))
 MOCK_SRCS    := $(wildcard tests/mocks/*.c)
 
-.PHONY: all clean test test-tools export-sprites
+.PHONY: all clean test test-tools export-sprites bank-check
 
 all: $(TARGET)
 
@@ -80,7 +80,7 @@ $(TARGET): src/npc_mechanic_portrait.c src/npc_trader_portrait.c src/npc_drifter
 $(OBJ_DIR)/%.o: src/%.c | $(OBJ_DIR)
 	$(LCC) $(CFLAGS) $(ROMFLAGS) -c -o $@ $<
 
-$(TARGET): $(OBJS) | build
+$(TARGET): $(OBJS) | build bank-check
 	$(LCC) $(CFLAGS) $(ROMFLAGS) -o $@ $(OBJS) -Wl-k$(CURDIR)/lib/hUGEDriver/gbdk -Wl-lhUGEDriver.lib
 
 $(OBJ_DIR):
@@ -112,6 +112,10 @@ $(TARGET): src/overmap_map.c
 
 test-tools:
 	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c -v
+
+# Validate #pragma bank in src/*.c against bank-manifest.json — fails build on mismatch
+bank-check:
+	python3 tools/bank_check.py .
 
 clean:
 	rm -rf build/

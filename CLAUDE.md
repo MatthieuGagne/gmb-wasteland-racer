@@ -12,10 +12,10 @@ GBDK_HOME=/home/mathdaman/gbdk make
 make clean
 
 # Run in emulator
-java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/junk-runner.gb
+java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/nuke-raider.gb
 ```
 
-Output ROM: `build/junk-runner.gb`
+Output ROM: `build/nuke-raider.gb`
 
 ## Architecture
 
@@ -67,46 +67,6 @@ These apply to every feature, no matter how small.
 Current flags: `-Wm-yc` (CGB compatible, runs on DMG+GBC), `-Wm-yt1` (MBC1), `-Wm-yn"JUNK RUNNER"`.
 To target GBC-only (access extra VRAM bank, 8 BG/OBJ palettes): swap `-Wm-yc` for `-Wm-yC`.
 
-## ROM Banking — Autobanking Conventions
-
-The ROM uses GBDK's `-autobank` linker flag. Every new file **must** follow this pattern:
-
-**Source files (`src/*.c`):**
-```c
-#pragma bank 255          /* tells autobanker to assign this file a bank */
-#include <gb/gb.h>
-#include "banking.h"      /* SET_BANK / RESTORE_BANK macros */
-
-BANKREF(my_asset)         /* one per exported data symbol in this file */
-const uint8_t my_asset[] = { ... };
-```
-
-**Header files (`src/*.h`) — public API declarations:**
-```c
-#include <gb/gb.h>        /* required so BANKED resolves without gb.h first */
-#include "banking.h"
-
-BANKREF_EXTERN(my_asset)  /* one per data symbol declared here */
-void my_func(void) BANKED;/* mark all public functions BANKED */
-```
-
-**Calling across banks (data reads):**
-```c
-{ SET_BANK(my_asset);     /* wraps in { } to scope _saved_bank */
-  use_data(my_asset);
-  RESTORE_BANK(); }
-```
-If two `SET_BANK` calls are needed in one function, wrap each in its own `{ }` block — both declare `uint8_t _saved_bank` and would conflict otherwise.
-
-**CRITICAL — BANKED function pointers in structs are BROKEN on SDCC/SM83:**
-`void (*fn)(void) BANKED` in a struct field generates double-dereference code — it loads the address stored in the field, then reads 2 bytes *from* that address (the function's machine code), then jumps there → garbage. Use plain `void (*fn)(void)` for all struct callback fields. The static functions assigned to those fields must also be non-BANKED (even inside a `#pragma bank 255` file, do not add `BANKED` to static state callbacks). Named cross-bank calls via `BANKED` + trampolines work correctly; only function *pointer* struct fields are broken.
-
-**Generated asset files** (`tools/png_to_tiles.py`, `tools/tmx_to_c.py`) already emit the correct banking boilerplate — do not strip it.
-
-**Asset pipeline rule — NO hardcoded 2bpp tile data in C source:** Every tile or sprite asset must have an `.aseprite` canonical source under `assets/`, exported to PNG via `make export-sprites`, and converted to a C array via `png_to_tiles.py`. Maps must have a `.tmx`/`.tsx` in `assets/maps/` and be converted via `tmx_to_c.py`. Never write raw `uint8_t tile_data[] = { 0xFF, 0x00, ... }` inline in `.c` files — use the pipeline.
-
-**Mock header** (`tests/mocks/gb/gb.h`) defines `BANKREF`, `BANKREF_EXTERN`, `BANK()`, `SET_BANK`, `RESTORE_BANK` as no-ops so tests compile without hardware.
-
 ## GBDK / SDCC Constraints
 
 - **No compound literals**: SDCC rejects `(const uint16_t[]){...}` — use named `static const` arrays.
@@ -132,9 +92,9 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 ### Agents (in `.claude/agents/`, invoked with the Agent tool)
 
-- **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, MBC banking, compilation errors.
+- **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, compilation errors. Banking questions → bank-pre-write/bank-post-build skills.
 - **`gb-c-optimizer`** — C code review for GBC performance/ROM size, anti-pattern detection, SDCC optimization.
-- **`gb-memory-validator`** — Validates all four GB hardware memory budgets (ROM, WRAM, VRAM, OAM). Run after every successful build, before smoketest/PR.
+- **`gb-memory-validator`** — Validates WRAM, VRAM, and OAM budgets. ROM bank budgets handled by `bank-post-build` skill. Run after every successful build, before smoketest/PR.
 - **`map-builder`** — End-to-end map creation: Tiled layout, TMX conversion pipeline, wiring generated C files into the game.
 - **`sprite-builder`** — End-to-end sprite creation: Aseprite source, PNG export, `png_to_tiles`, OAM slots, tile data loading, in-game rendering.
 
@@ -146,6 +106,8 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 - **`emulicious-debug`** — Step-through debugger, breakpoints, `EMU_printf`, memory/tile/sprite inspection, tracer, profiler, romusage.
 - **`music-expert`** — Music driver integration, hUGEDriver patterns, music_tick placement, bank-safe calls.
 - **`build`** — Build verification gate: compile the ROM and confirm no errors.
+- **`bank-pre-write`** — Hard gate before writing any `src/*.c`/`.h`. Validates manifest entry, pragma, SET_BANK safety. **Invoke before every write.**
+- **`bank-post-build`** — Hard gate after successful build. Validates .map symbol placements vs manifest, ROM bank budgets. **Invoke before every smoketest.**
 - **`test`** — TDD red/green gate: run host-side unit tests with gcc + Unity.
 - **`prd`** — Create a GitHub issue with a PRD for a new feature.
 
@@ -155,6 +117,7 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 
 **Outer loop:** brainstorming → PRD (`/prd`) → [separate session] writing-plans → subagent-driven-development
 **TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill)
+**Bank manifest maintenance:** Every new `src/*.c` file must have an entry in `bank-manifest.json` before it is written. `bank-pre-write` skill and `bank_check.py` (Makefile dependency) both enforce this. Every banking-related PR must update ALL artifacts: `bank-manifest.json`, both bank skills, `bank_check.py`, `gbdk-expert`, `gb-memory-validator`, and this file.
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
 **PRDs & design docs:** GitHub issues only — no local files. Use `/prd` skill.
 **Brainstorming skill override:** Skip step 5 (write design doc to `docs/plans/`) — use `/prd` to create a GitHub issue instead.
@@ -165,12 +128,13 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 1. Fetch and merge latest master: `git fetch origin && git merge origin/master` (from the worktree directory). NEVER use `git merge master` alone — the local master ref may be stale.
 2. Rebuild: `GBDK_HOME=/home/mathdaman/gbdk make`
 3. Run `gb-memory-validator` agent — if any budget is FAIL, stop and fix before continuing.
-4. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/junk-runner.gb` (run from the worktree directory so the path resolves to the worktree's `build/`). NEVER launch from the main repo's `build/` — it may be stale.
+4. Launch the ROM — do NOT ask permission, just run it immediately in the background: `java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/nuke-raider.gb` (run from the worktree directory so the path resolves to the worktree's `build/`). NEVER launch from the main repo's `build/` — it may be stale.
 5. Tell the user it's running and ask them to confirm it looks correct before proceeding.
 6. Only after the user confirms: push the branch and create the PR.
 
 **GB skill gates (mandatory):**
-- Before writing any `src/*.c` or `src/*.h` file → invoke `gbdk-expert`
+- Before writing any `src/*.c` or `src/*.h` file → invoke `bank-pre-write` skill, then `gbdk-expert`
+- After a successful build, before smoketest → invoke `bank-post-build` skill, then `gb-memory-validator` agent
 - When debugging any runtime issue → invoke `emulicious-debug`
 
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.
