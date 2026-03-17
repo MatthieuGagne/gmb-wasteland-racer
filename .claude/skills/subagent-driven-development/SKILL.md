@@ -101,12 +101,13 @@ When dispatching the implementer subagent, include ALL of the following in the p
 3. **Mandatory GB gate instructions:**
 
    > Before writing any `src/*.c` or `src/*.h` file:
-   > 1. Invoke the `bank-pre-write` skill (HARD GATE) — verify bank-manifest.json entry exists
-   > 2. Invoke the `gbdk-expert` agent (HARD GATE) — confirm API, data types, GBDK calls
+   > 1. Invoke the `bank-pre-write` **skill** (HARD GATE — use the `Skill` tool) — verify bank-manifest.json entry exists
+   > 2. Invoke the `gbdk-expert` **agent** (HARD GATE — use the `Agent` tool) — confirm API, data types, GBDK calls
    > Only write the C file AFTER both gates pass.
    >
    > After any successful build:
    > 1. Invoke the `bank-post-build` skill (HARD GATE) — verify bank placements and budgets
+   > 2. Run the `gb-memory-validator` agent (HARD GATE) — if any budget is FAIL, stop and fix
    >
    > Follow TDD: write failing test first, make it pass, then build.
 
@@ -114,9 +115,10 @@ When dispatching the implementer subagent, include ALL of the following in the p
 
 After all tasks are complete and the final code reviewer approves, run the post-build review:
 
-1. Invoke `bank-post-build` skill — if FAIL, stop and fix
-2. Run `gb-memory-validator` agent — if any budget is FAIL, stop and fix
-3. Run smoketest sequence:
+1. Run `make test` — if any tests fail, stop and fix before continuing
+2. Invoke `bank-post-build` skill — if FAIL, stop and fix
+3. Run `gb-memory-validator` agent — if any budget is FAIL, stop and fix
+4. Run smoketest sequence:
    ```bash
    # From the worktree directory
    git fetch origin && git merge origin/master
@@ -126,6 +128,15 @@ After all tasks are complete and the final code reviewer approves, run the post-
    Tell the user it's running. Wait for their confirmation before proceeding.
 
 Only after smoketest confirmed: use `superpowers:finishing-a-development-branch`.
+
+## Final Code Reviewer Dispatch
+
+After all tasks complete, dispatch a final code quality reviewer with the full feature branch diff:
+
+- Use `superpowers:requesting-code-review` as the reviewer prompt template
+- Scope: the entire feature branch (`git diff master...HEAD`), not just the last task
+- The reviewer should confirm all requirements are met and the implementation is ready to merge
+- Only proceed to the Post-Build Review Step after the final reviewer approves
 
 ## Example Workflow
 
