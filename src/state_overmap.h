@@ -8,6 +8,7 @@
 
 extern const State state_overmap;
 extern uint8_t current_race_id;
+extern uint8_t current_hub_id;
 
 /* Generated tile and map data (from assets/maps/overmap_tiles.png and overmap.tmx) */
 BANKREF_EXTERN(overmap_tile_data)
@@ -20,5 +21,7 @@ extern const uint8_t overmap_map[];
 /* Accessors used by unit tests */
 uint8_t overmap_get_car_tx(void);
 uint8_t overmap_get_car_ty(void);
+uint8_t overmap_get_spawn_tx(void);
+uint8_t overmap_get_spawn_ty(void);
 
 #endif /* STATE_OVERMAP_H */

@@ -16,6 +16,17 @@
 static uint8_t car_tx;
 static uint8_t car_ty;
 uint8_t current_race_id = 0u;
+uint8_t current_hub_id  = 0u;
+
+/* Scan-result SoA arrays — populated by overmap_scan_map() in enter() */
+static uint8_t overmap_hub_tx[1u];
+static uint8_t overmap_hub_ty[1u];
+static uint8_t overmap_dest_tx[MAX_OVERMAP_DESTS];
+static uint8_t overmap_dest_ty[MAX_OVERMAP_DESTS];
+static uint8_t overmap_city_hub_tx[MAX_OVERMAP_HUBS];
+static uint8_t overmap_city_hub_ty[MAX_OVERMAP_HUBS];
+static uint8_t overmap_dest_count;
+static uint8_t overmap_city_hub_count;
 
 #define TRAVEL_FRAMES_PER_TILE 4u   /* file-local tuning — not in config.h */
 
@@ -27,6 +38,38 @@ static uint8_t dest_ty;
 
 uint8_t overmap_get_car_tx(void) { return car_tx; }
 uint8_t overmap_get_car_ty(void) { return car_ty; }
+
+/* Must be called inside SET_BANK(overmap_map) on hardware;
+ * SET_BANK is a no-op in host tests so direct access is safe. */
+static void overmap_scan_map(void) {
+    uint8_t tx, ty;
+    uint8_t hub_found = 0u;
+    overmap_dest_count     = 0u;
+    overmap_city_hub_count = 0u;
+    for (ty = 0u; ty < OVERMAP_H; ty++) {
+        for (tx = 0u; tx < OVERMAP_W; tx++) {
+            uint8_t tile = overmap_map[(uint16_t)ty * OVERMAP_W + tx];
+            if (tile == OVERMAP_TILE_HUB && !hub_found) {
+                overmap_hub_tx[0] = tx;
+                overmap_hub_ty[0] = ty;
+                hub_found = 1u;
+            } else if (tile == OVERMAP_TILE_DEST &&
+                       overmap_dest_count < MAX_OVERMAP_DESTS) {
+                overmap_dest_tx[overmap_dest_count] = tx;
+                overmap_dest_ty[overmap_dest_count] = ty;
+                overmap_dest_count++;
+            } else if (tile == OVERMAP_TILE_CITY_HUB &&
+                       overmap_city_hub_count < MAX_OVERMAP_HUBS) {
+                overmap_city_hub_tx[overmap_city_hub_count] = tx;
+                overmap_city_hub_ty[overmap_city_hub_count] = ty;
+                overmap_city_hub_count++;
+            }
+        }
+    }
+}
+
+uint8_t overmap_get_spawn_tx(void) { return overmap_hub_tx[0]; }
+uint8_t overmap_get_spawn_ty(void) { return overmap_hub_ty[0]; }
 
 /* ── Helpers ────────────────────────────────────────────────────────────────── */
 static uint8_t overmap_walkable(uint8_t tx, uint8_t ty) {
@@ -69,14 +112,31 @@ static uint8_t find_next_node(int8_t dx, int8_t dy, uint8_t *out_tx, uint8_t *ou
 static void overmap_check_tile_effect(void) {
     uint8_t tile = overmap_map[(uint16_t)car_ty * OVERMAP_W + car_tx];
     if (tile == OVERMAP_TILE_CITY_HUB) {
-        traveling = 0u;               /* clear BEFORE state_push — no reset needed on pop */
+        uint8_t i;
+        traveling = 0u;
+        current_hub_id = 0u;
+        for (i = 0u; i < overmap_city_hub_count; i++) {
+            if (overmap_city_hub_tx[i] == car_tx &&
+                overmap_city_hub_ty[i] == car_ty) {
+                current_hub_id = i;
+                break;
+            }
+        }
         state_push(&state_hub);
         overmap_hub_entered = 1u;
         return;
     }
     if (tile == OVERMAP_TILE_DEST) {
+        uint8_t i;
         traveling = 0u;
-        current_race_id = (car_tx < OVERMAP_HUB_TX) ? 0u : 1u;
+        current_race_id = 0u;
+        for (i = 0u; i < overmap_dest_count; i++) {
+            if (overmap_dest_tx[i] == car_tx &&
+                overmap_dest_ty[i] == car_ty) {
+                current_race_id = i;
+                break;
+            }
+        }
         player_set_pos(track_start_x, track_start_y);
         player_reset_vel();
         state_replace(&state_playing);
@@ -85,8 +145,11 @@ static void overmap_check_tile_effect(void) {
 
 /* ── State callbacks ─────────────────────────────────────────────────────────── */
 static void enter(void) {
-    car_tx = OVERMAP_HUB_TX;
-    car_ty = OVERMAP_HUB_TY;
+    { SET_BANK(overmap_map);
+      overmap_scan_map();
+      RESTORE_BANK(); }
+    car_tx = overmap_hub_tx[0];
+    car_ty = overmap_hub_ty[0];
     traveling = 0u; travel_dir = 0u; travel_frame_count = 0u;
     dest_tx = 0u;   dest_ty = 0u;
 

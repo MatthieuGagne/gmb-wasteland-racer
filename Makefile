@@ -1,7 +1,7 @@
 GBDK_HOME ?= /opt/gbdk
 LCC       := $(GBDK_HOME)/bin/lcc
 
-CFLAGS    := -Wa-l -Wl-m -Wl-j -Wm-ya16 -autobank -Wb-ext=.rel -Ilib/hUGEDriver/include
+CFLAGS    := -Wa-l -Wl-m -Wl-j -Wm-ya32 -autobank -Wb-ext=.rel -Ilib/hUGEDriver/include
 ifeq ($(DEBUG),1)
 CFLAGS += -DDEBUG
 endif
@@ -19,7 +19,7 @@ TEST_FLAGS   := -Itests/mocks -Itests/unity/src -Isrc -Ilib/hUGEDriver/include -
 TEST_LIB_SRC := $(filter-out src/main.c,$(wildcard src/*.c))
 MOCK_SRCS    := $(wildcard tests/mocks/*.c)
 
-.PHONY: all clean test test-tools export-sprites
+.PHONY: all clean test test-tools export-sprites bank-check bank-post-build
 
 all: $(TARGET)
 
@@ -58,6 +58,14 @@ src/player_sprite.c: assets/sprites/player_car.png tools/png_to_tiles.py
 
 $(TARGET): src/player_sprite.c
 
+# NPC portraits are pinned to --bank 2, NOT --bank 255 (autobank).
+# Rationale: bankpack fills bank 1 first; portraits would land in bank 1 and
+# push track_tile_data / player_tile_data to bank 2.  track_init() and
+# player_init() are BANKED functions in bank 1 that call SET_BANK() to reach
+# those assets — SET_BANK inside a banked function in the switchable window
+# (0x4000-0x7FFF) unmaps the executing code and crashes.  Pinning portraits
+# to bank 2 keeps the hot assets (track_tile_data, player_tile_data) in bank 1
+# alongside the code that accesses them, making SET_BANK a no-op there.
 src/npc_mechanic_portrait.c: assets/sprites/npc_mechanic.png tools/png_to_tiles.py
 	python3 tools/png_to_tiles.py --bank 2 assets/sprites/npc_mechanic.png src/npc_mechanic_portrait.c npc_mechanic_portrait
 
@@ -72,7 +80,7 @@ $(TARGET): src/npc_mechanic_portrait.c src/npc_trader_portrait.c src/npc_drifter
 $(OBJ_DIR)/%.o: src/%.c | $(OBJ_DIR)
 	$(LCC) $(CFLAGS) $(ROMFLAGS) -c -o $@ $<
 
-$(TARGET): $(OBJS) | build
+$(TARGET): $(OBJS) | build bank-check
 	$(LCC) $(CFLAGS) $(ROMFLAGS) -o $@ $(OBJS) -Wl-k$(CURDIR)/lib/hUGEDriver/gbdk -Wl-lhUGEDriver.lib
 
 $(OBJ_DIR):
@@ -103,7 +111,14 @@ src/overmap_map.c: assets/maps/overmap.tmx tools/tmx_to_array_c.py
 $(TARGET): src/overmap_map.c
 
 test-tools:
-	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c -v
+	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c tests.test_bank_check tests.test_bank_post_build -v
+
+# Validate #pragma bank in src/*.c against bank-manifest.json — fails build on mismatch
+bank-check:
+	python3 tools/bank_check.py .
+
+bank-post-build:
+	python3 tools/bank_post_build.py .
 
 clean:
 	rm -rf build/

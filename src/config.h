@@ -40,10 +40,8 @@
 /* Overmap layout constants */
 #define OVERMAP_W            20u
 #define OVERMAP_H            18u
-#define OVERMAP_HUB_TX        9u
-#define OVERMAP_HUB_TY        8u
-#define OVERMAP_DEST_LEFT_TX  2u
-#define OVERMAP_DEST_RIGHT_TX 17u
+#define MAX_OVERMAP_DESTS    4u
+#define MAX_OVERMAP_HUBS     4u
 
 /* Overmap tile type indices (BKG tile data slots 0-N) */
 #define OVERMAP_TILE_BLANK    0u
