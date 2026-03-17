@@ -76,8 +76,9 @@ After all tasks complete and verified, run the smoketest sequence:
    ```
    NEVER use `git merge master` alone — the local master ref may be stale.
 
-2. Rebuild:
+2. Ensure a ROM exists — if `build/nuke-raider.gb` is missing, do a clean build first:
    ```bash
+   ls build/nuke-raider.gb 2>/dev/null || (make clean && GBDK_HOME=/home/mathdaman/gbdk make)
    GBDK_HOME=/home/mathdaman/gbdk make
    ```
 
