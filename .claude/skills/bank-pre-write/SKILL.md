@@ -5,13 +5,13 @@ description: Hard gate — invoke before writing any src/*.c or src/*.h file. Va
 
 # Bank Pre-Write Gate
 
-**STOP.** Before writing or editing any `src/*.c` or `src/*.h` file, run every check below. Block writing if any check fails.
+**STOP.** Before writing or editing any `src/*.c` or `src/*.h` file, run the checks below. For `.c` files: all 5 checks apply. For `.h` files: Checks 3, 4, and 5 apply (headers carry no `#pragma bank`; the manifest covers `.c` files only).
 
 ## Check 1 — Manifest entry exists
 
 Read `bank-manifest.json` at the repo root.
 
-- If the file you are about to write is NOT in the manifest → **BLOCK**:
+- If the file you are about to write is a `.c` file and is NOT in the manifest → **BLOCK**:
   > "Add an entry to `bank-manifest.json` for `src/<file>.c` before writing it. Specify bank number (255 for autobank, 1 for state code, 2 for portraits, 0 for HOME bank code) and reason."
 
 - If creating a new `state_*.c` file → manifest bank **must** be 1 (or 0 if it calls SET_BANK).

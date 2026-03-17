@@ -17,8 +17,8 @@ Run after `GBDK_HOME=/home/mathdaman/gbdk make` succeeds. Block proceeding to sm
 
 | Bank | WARN | FAIL |
 |------|------|------|
-| Bank 1 | >90% | >100% |
-| All others | >80% | >100% |
+| Bank 1 | >90% | >=100% |
+| All others | >80% | >=100% |
 
 If any bank FAILs → **BLOCK.** Tell user:
 > "Bank N is full. Fix: bump `-Wm-ya` to the next power of 2 in the Makefile (e.g. `-Wm-ya16` → `-Wm-ya32`)."
@@ -29,13 +29,13 @@ If bank 1 WARNs (>90%) → flag prominently:
 ## Step 2 — Check state code stays in bank 1
 
 ```sh
-grep "_state_" build/nuke-raider.map | grep -v "^;" | grep -v " 014[0-9A-Fa-f]\{3\} "
+grep "^  *0002[0-9A-Fa-f]" build/nuke-raider.map | grep "_state_"
 ```
 
-Symbols matching `_state_*` that appear at addresses **outside** `0x14000–0x17FFF` (bank 1 range) indicate overflow.
+Symbols matching `_state_*` that appear at addresses `0x00020000` or higher (bank 2+) indicate overflow.
 
-If any `_state_` symbol appears at `0x024xxx` or higher → **BLOCK:**
-> "State code overflowed bank 1 — blank screen crash at boot guaranteed. Bump `-Wm-ya` to next power of 2."
+If any output is produced → **BLOCK:**
+> "State code is in bank 2 or higher — blank screen crash at boot guaranteed. Bump `-Wm-ya` to next power of 2."
 
 ## Step 3 — Verify `__bank_` symbols match manifest
 
@@ -51,7 +51,7 @@ If a `__bank_` value is wrong → flag to user. Common cause: BANKREF placed in 
 
 ```sh
 grep "\-Wm-ya" Makefile
-/home/mathdaman/gbdk/bin/romusage build/nuke-raider.gb -a | grep "ROM Bank"
+/home/mathdaman/gbdk/bin/romusage build/nuke-raider.gb -a | grep "^ROM"
 ```
 
 The highest bank number in use must be < the value declared with `-Wm-ya`. If banks are present beyond the declared count → **BLOCK.**
