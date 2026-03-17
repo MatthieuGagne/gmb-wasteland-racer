@@ -129,7 +129,6 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 **Bank manifest maintenance:** Every new `src/*.c` file must have an entry in `bank-manifest.json` before it is written. `bank-pre-write` skill and `bank_check.py` (Makefile dependency) both enforce this. Every banking-related PR must update ALL artifacts: `bank-manifest.json`, both bank skills, `bank_check.py`, `gbdk-expert`, `gb-memory-validator`, and this file.
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
 **PRDs & design docs:** GitHub issues only — no local files. Use `/prd` skill.
-**Brainstorming skill override:** Skip step 5 (write design doc to `docs/plans/`) — use `/prd` to create a GitHub issue instead.
 
 **Worktree policy:** ALL file operations — creating, editing, or deleting files — MUST happen inside a git worktree. This applies to implementation plans, code, tests, docs, and any other file. Before touching any file, use the `using-git-worktrees` skill or `EnterWorktree` tool to enter a worktree. Never write, edit, or delete files directly in the main working tree. If you are not currently in a worktree, STOP and enter one first.
 
