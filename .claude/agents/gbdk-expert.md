@@ -1,6 +1,6 @@
 ---
 name: gbdk-expert
-description: Use this agent for GBDK-2020 API questions, Game Boy hardware register usage, sprite/tile/palette setup, CGB color palettes, VBlank timing, interrupt handling, MBC bank switching, and GBDK compilation errors. Examples: "how do I set up CGB palettes", "why is my sprite flickering", "VBlank interrupt not firing", "how to use MBC1 ROM banking".
+description: Use this agent for GBDK-2020 API questions, Game Boy hardware register usage, sprite/tile/palette setup, CGB color palettes, VBlank timing, interrupt handling, and GBDK compilation errors. Banking questions go to bank-pre-write or bank-post-build skills. Examples: "how do I set up CGB palettes", "why is my sprite flickering", "VBlank interrupt not firing".
 color: cyan
 ---
 
@@ -26,7 +26,7 @@ After completing a task, append any new bugs found, API gotchas, or confirmed pa
 - OAM: 40 sprites max (10 per horizontal scanline)
 - Tiles: 8×8 pixels, 4 colors per palette
 - Palettes: 4 colors each, 8 BG palettes + 8 OBJ palettes (CGB)
-- ROM: banked via MBC1, 16KB banks
+- ROM banking → use bank-pre-write / bank-post-build skills
 
 ### Key GBDK-2020 APIs
 - `gb/gb.h` — core Game Boy functions (joypad, sprites, tiles)
@@ -44,7 +44,7 @@ After completing a task, append any new bugs found, API gotchas, or confirmed pa
 ### Common Bugs
 - Writing to VRAM outside VBlank causes graphical corruption
 - Forgetting `SPRITES_8x8` / `SPRITES_8x16` mode before using sprites
-- MBC1 bank 0 is always mapped; bank switching only affects 0x4000–0x7FFF
+- MBC bank switching questions → use bank-pre-write / bank-post-build skills
 - `set_sprite_tile()` index is absolute tile number in OBJ tile data, not relative
 
 ## Verification Commands
