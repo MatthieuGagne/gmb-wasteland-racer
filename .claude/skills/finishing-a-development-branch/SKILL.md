@@ -60,6 +60,7 @@ Only continue to Step 3 when both gates pass.
 3. Launch the ROM immediately in the background (from the worktree directory so `build/` resolves
    to the worktree's build output — NEVER from the main repo's `build/`):
    ```bash
+   # Run from the worktree directory (cd there first if needed)
    java -jar /home/mathdaman/.local/share/emulicious/Emulicious.jar build/nuke-raider.gb
    ```
 
@@ -70,15 +71,7 @@ Only continue to Step 3 when both gates pass.
 - If issues found: work with user to fix before continuing
 - If confirmed: Continue to Step 4
 
-### Step 4: Determine Base Branch
-
-```bash
-git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
-```
-
-Or ask: "This branch split from master — is that correct?"
-
-### Step 5: Present Options
+### Step 4: Present Options
 
 Present exactly these 3 options:
 
@@ -96,7 +89,7 @@ Which option?
 
 **Don't add explanation** — keep options concise.
 
-### Step 6: Execute Choice
+### Step 5: Execute Choice
 
 #### Option 1: Push and Create PR
 
@@ -120,7 +113,7 @@ EOF
 )"
 ```
 
-Then: Cleanup worktree (Step 7)
+Then: Cleanup worktree (Step 6)
 
 #### Option 2: Keep As-Is
 
@@ -142,15 +135,17 @@ Type 'discard' to confirm.
 
 Wait for exact confirmation.
 
-If confirmed:
+If confirmed, remove the worktree first, then delete the branch from the main repo:
+
 ```bash
-git checkout master
-git branch -D <feature-branch>
+# Step 1: Remove the worktree (from inside the worktree — git worktree remove works)
+git worktree remove --force <worktree-path>
+
+# Step 2: Delete the branch from the main repo
+git -C /home/mathdaman/code/gmb-nuke-raider branch -D <feature-branch>
 ```
 
-Then: Cleanup worktree (Step 7)
-
-### Step 7: Cleanup Worktree
+### Step 6: Cleanup Worktree
 
 **For Options 1 and 3:**
 
@@ -170,7 +165,7 @@ git worktree remove <worktree-path>
 
 | Option | Push | Keep Worktree | Cleanup Branch |
 |--------|------|---------------|----------------|
-| 1. Create PR | ✓ | ✓ | - |
+| 1. Create PR | ✓ | - | - |
 | 2. Keep as-is | - | ✓ | - |
 | 3. Discard | - | - | ✓ (force) |
 
