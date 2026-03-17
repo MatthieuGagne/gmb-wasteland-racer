@@ -19,7 +19,7 @@ TEST_FLAGS   := -Itests/mocks -Itests/unity/src -Isrc -Ilib/hUGEDriver/include -
 TEST_LIB_SRC := $(filter-out src/main.c,$(wildcard src/*.c))
 MOCK_SRCS    := $(wildcard tests/mocks/*.c)
 
-.PHONY: all clean test test-tools export-sprites bank-check
+.PHONY: all clean test test-tools export-sprites bank-check bank-post-build
 
 all: $(TARGET)
 
@@ -116,6 +116,9 @@ test-tools:
 # Validate #pragma bank in src/*.c against bank-manifest.json — fails build on mismatch
 bank-check:
 	python3 tools/bank_check.py .
+
+bank-post-build:
+	python3 tools/bank_post_build.py .
 
 clean:
 	rm -rf build/
