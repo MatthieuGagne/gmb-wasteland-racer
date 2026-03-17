@@ -111,7 +111,7 @@ src/overmap_map.c: assets/maps/overmap.tmx tools/tmx_to_array_c.py
 $(TARGET): src/overmap_map.c
 
 test-tools:
-	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c -v
+	PYTHONPATH=. python3 -m unittest tests.test_png_to_tiles tests.test_tmx_to_c tests.test_bank_check tests.test_bank_post_build -v
 
 # Validate #pragma bank in src/*.c against bank-manifest.json — fails build on mismatch
 bank-check:
