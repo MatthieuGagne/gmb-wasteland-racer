@@ -37,6 +37,11 @@ void track_init(void) BANKED {
     SHOW_BKG;
 }
 
+uint8_t track_get_raw_tile(uint8_t tx, uint8_t ty) BANKED {
+    if (tx >= MAP_TILES_W || ty >= MAP_TILES_H) return 0u;
+    return track_map[(uint16_t)ty * MAP_TILES_W + tx];
+}
+
 uint8_t track_passable(int16_t world_x, int16_t world_y) BANKED {
     uint8_t tx;
     uint8_t ty;

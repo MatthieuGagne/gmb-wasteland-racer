@@ -35,4 +35,8 @@ BANKREF_EXTERN(track_start_y)
 void    track_init(void) BANKED;
 uint8_t track_passable(int16_t world_x, int16_t world_y) BANKED;
 
+/* Returns the raw tile index at world tile position (tx, ty).
+ * BANKED — trampoline handles cross-bank dispatch safely. */
+uint8_t track_get_raw_tile(uint8_t tx, uint8_t ty) BANKED;
+
 #endif /* TRACK_H */
