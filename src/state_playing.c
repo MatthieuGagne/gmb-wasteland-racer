@@ -1,9 +1,12 @@
-#pragma bank 1
+#pragma bank 255
 #include <gb/gb.h>
+#include "banking.h"
 #include "input.h"
 #include "state_manager.h"
 #include "state_playing.h"
 #include "state_overmap.h"
+BANKREF(state_playing)
+BANKREF_EXTERN(state_playing)
 #include "player.h"
 #include "track.h"
 #include "camera.h"
@@ -42,4 +45,4 @@ static void sp_exit(void) {
     HIDE_WIN;
 }
 
-const State state_playing = { enter, update, sp_exit };
+const State state_playing = { BANK(state_playing), enter, update, sp_exit };

@@ -1,4 +1,5 @@
 #include <gb/gb.h>
+#include "banking.h"
 #include "state_overmap.h"
 #include "state_playing.h"
 #include "state_hub.h"
@@ -210,4 +211,4 @@ static void update(void) {
 static void om_exit(void) {
 }
 
-const State state_overmap = { enter, update, om_exit };
+const State state_overmap = { 0, enter, update, om_exit };
