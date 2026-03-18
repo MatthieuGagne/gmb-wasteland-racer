@@ -19,7 +19,7 @@
   "src/player_sprite.c":         {"bank": 255, "reason": "autobank"},
   "src/sprite_pool.c":           {"bank": 255, "reason": "autobank"},
   "src/state_hub.c":             {"bank": 0,   "reason": "calls SET_BANK — must be HOME bank; no #pragma bank"},
-  "src/state_manager.c":         {"bank": 1,   "reason": "state dispatch — pinned bank 1, all state callbacks must match"},
+  "src/state_manager.c":         {"bank": 0,   "reason": "state dispatch uses invoke(); must call SWITCH_ROM from bank 0"},
   "src/state_overmap.c":         {"bank": 0,   "reason": "calls SET_BANK — must be HOME bank; no #pragma bank"},
   "src/state_playing.c":         {"bank": 1,   "reason": "state callback — must be bank 1 with state_manager"},
   "src/state_title.c":           {"bank": 1,   "reason": "state callback — must be bank 1 with state_manager"},
