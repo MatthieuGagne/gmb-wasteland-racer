@@ -179,33 +179,37 @@ static void update(void) {
         overmap_move_sprite();
         if (car_tx == dest_tx && car_ty == dest_ty) {
             traveling = 0u;
-            overmap_check_tile_effect();
+            { SET_BANK(overmap_map);
+              overmap_check_tile_effect();
+              RESTORE_BANK(); }
             return;
         }
         travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
         return;
     }
-    if (KEY_TICKED(J_LEFT)) {
-        if (find_next_node(-1, 0, &dest_tx, &dest_ty)) {
-            traveling = 1u; travel_dir = J_LEFT;
-            travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
-        }
-    } else if (KEY_TICKED(J_RIGHT)) {
-        if (find_next_node(1, 0, &dest_tx, &dest_ty)) {
-            traveling = 1u; travel_dir = J_RIGHT;
-            travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
-        }
-    } else if (KEY_TICKED(J_UP)) {
-        if (find_next_node(0, -1, &dest_tx, &dest_ty)) {
-            traveling = 1u; travel_dir = J_UP;
-            travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
-        }
-    } else if (KEY_TICKED(J_DOWN)) {
-        if (find_next_node(0, 1, &dest_tx, &dest_ty)) {
-            traveling = 1u; travel_dir = J_DOWN;
-            travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
-        }
-    }
+    { SET_BANK(overmap_map);
+      if (KEY_TICKED(J_LEFT)) {
+          if (find_next_node(-1, 0, &dest_tx, &dest_ty)) {
+              traveling = 1u; travel_dir = J_LEFT;
+              travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
+          }
+      } else if (KEY_TICKED(J_RIGHT)) {
+          if (find_next_node(1, 0, &dest_tx, &dest_ty)) {
+              traveling = 1u; travel_dir = J_RIGHT;
+              travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
+          }
+      } else if (KEY_TICKED(J_UP)) {
+          if (find_next_node(0, -1, &dest_tx, &dest_ty)) {
+              traveling = 1u; travel_dir = J_UP;
+              travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
+          }
+      } else if (KEY_TICKED(J_DOWN)) {
+          if (find_next_node(0, 1, &dest_tx, &dest_ty)) {
+              traveling = 1u; travel_dir = J_DOWN;
+              travel_frame_count = TRAVEL_FRAMES_PER_TILE - 1u;
+          }
+      }
+      RESTORE_BANK(); }
 }
 
 static void om_exit(void) {
