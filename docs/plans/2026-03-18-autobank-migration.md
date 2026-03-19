@@ -334,6 +334,30 @@ git commit -m "chore: phase 0 complete — update all skills/agents/docs/memorie
 
 ---
 
+## Phase 1 Status: ⚠️ CODE COMPLETE, SMOKETEST FAILED (2026-03-18)
+
+All Phase 1 code tasks (1-A through 1-J) are complete. All acceptance criteria (AC1–AC10) pass. Smoketest in Emulicious showed the ROM is broken at runtime. Debug required before PR can be created.
+
+**Next session:** Run `emulicious-debug` skill to diagnose the runtime failure. The ROM builds clean, all host tests pass, bank-post-build passes — the issue is runtime behavior.
+
+| Task | Status | Commit |
+|------|--------|--------|
+| 1-A: Fix png_to_tiles.py BANKREF | ✅ done | a93d5b8 |
+| 1-B: bank_check SET_BANK lint rule | ✅ done | e791ebf |
+| 1-C: Create loader.c / loader.h | ✅ done | 75b1b2c |
+| 1-D: Remove SET_BANK from player.c | ✅ done | 199b1df |
+| 1-E: Remove SET_BANK from track.c | ✅ done | 0fa7a9e |
+| 1-F: camera.c track_get_raw_tile() | ✅ done | 2f9a53d |
+| 1-G: state_manager.c bank-0 invoke() | ✅ done | 3b6d053 |
+| 1-H: State callbacks BANKREF+bank field | ✅ done | 13911f6 |
+| 1-I: Unpin portraits + dialog_border | ✅ done | 68d0ec1 |
+| 1-J: Final verification (all ACs pass) | ✅ done | — |
+| 1-K: Smoketest + PR | ❌ BLOCKED — runtime failure | — |
+
+**Known implementation detail:** `BANKREF(x)` + `BANKREF_EXTERN(x)` are both needed in the defining file to use `BANK(x)` in static initializers (SDCC only emits the ASM stub from BANKREF, not a C declaration). Bank-0 State files (state_hub, state_overmap) use literal `0` instead of `BANK()` since BANK() does not work for HOME-bank files in SDCC.
+
+---
+
 ## Phase 1 — Implement autobank migration
 
 **⚠️ STOP:** Do not start Phase 1 until Phase 0 PR is merged and you have pulled the latest master into this worktree:
