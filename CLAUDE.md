@@ -94,7 +94,7 @@ Always use `gh` for git push/pull and GitHub operations. Run `gh auth setup-git`
 
 - **`gbdk-expert`** — GBDK-2020 API, hardware registers, sprites/palettes/interrupts, compilation errors. Banking questions → bank-pre-write/bank-post-build skills.
 - **`gb-c-optimizer`** — C code review for GBC performance/ROM size, anti-pattern detection, SDCC optimization.
-- **`gb-memory-validator`** — Validates WRAM, VRAM, and OAM budgets. ROM bank budgets handled by `bank-post-build` skill. Run after every successful build, before smoketest/PR.
+- **`gb-memory-validator`** — Thin wrapper (deprecated). Use `make memory-check` / the `gb-memory-validator` skill instead. Checks WRAM/VRAM/OAM via `tools/memory_check.py`.
 - **`map-builder`** — End-to-end map creation: Tiled layout, TMX conversion pipeline, wiring generated C files into the game.
 - **`sprite-builder`** — End-to-end sprite creation: Aseprite source, PNG export, `png_to_tiles`, OAM slots, tile data loading, in-game rendering.
 
