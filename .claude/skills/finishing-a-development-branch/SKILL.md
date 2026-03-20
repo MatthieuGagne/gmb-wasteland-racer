@@ -182,7 +182,7 @@ git worktree remove <worktree-path>
 
 **Skipping bank gates**
 - **Problem:** Undetected bank overflow causes blank screen / ~1-2 FPS
-- **Fix:** Always run bank-post-build and gb-memory-validator before smoketest
+- **Fix:** Always run bank-post-build and `make memory-check` before smoketest
 
 **Using bare `git merge master`**
 - **Problem:** Local master ref may be stale; silently merges old code
@@ -207,13 +207,13 @@ git worktree remove <worktree-path>
 - Use `mgba-qt` (wrong emulator)
 - Reference `wasteland-racer.gb` (wrong ROM name)
 - Launch emulator from main repo's `build/` (may be stale)
-- Skip bank-post-build or gb-memory-validator before smoketest
+- Skip bank-post-build or `make memory-check` before smoketest
 
 **Always:**
 - Work on a feature branch
 - Integrate via PR only
 - Verify tests before offering options
-- Run bank-post-build + gb-memory-validator before smoketest
+- Run bank-post-build + `make memory-check` before smoketest
 - Fetch + merge origin/master before smoketest rebuild
 - Launch Emulicious from worktree directory
 - Present exactly 3 options
