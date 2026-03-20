@@ -1273,12 +1273,12 @@ make test && make test-tools
 ```
 Expected: all pass.
 
-**Step 5: AC6 — No bank 1 or bank 2 entries in manifest**
+**Step 5: AC6 — No manual SET_BANK in any file with #pragma bank (all banks)**
 
 ```bash
-python3 -c "import json; m=json.load(open('bank-manifest.json')); bad=[k for k,v in m.items() if v['bank'] in (1,2)]; print(bad or 'PASS')"
+python3 bank_check.py
 ```
-Expected: `PASS`.
+Expected: all pass. (AC6 was revised: explicit bank pins like `#pragma bank 2` are correct for heavy data files — the invariant is no SET_BANK in banked code, not no explicit pins.)
 
 **Step 6: AC7 — bank_check rejects SET_BANK in banked file**
 

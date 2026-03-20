@@ -1,4 +1,5 @@
 #include <gb/gb.h>
+#include <gbdk/emu_debug.h>
 #include "banking.h"
 #include "state_overmap.h"
 #include "state_playing.h"
@@ -112,6 +113,7 @@ static uint8_t find_next_node(int8_t dx, int8_t dy, uint8_t *out_tx, uint8_t *ou
 
 static void overmap_check_tile_effect(void) {
     uint8_t tile = overmap_map[(uint16_t)car_ty * OVERMAP_W + car_tx];
+    EMU_printf("tile_effect tile=%hu\n", tile);
     if (tile == OVERMAP_TILE_CITY_HUB) {
         uint8_t i;
         traveling = 0u;
@@ -146,6 +148,7 @@ static void overmap_check_tile_effect(void) {
 
 /* ── State callbacks ─────────────────────────────────────────────────────────── */
 static void enter(void) {
+    EMU_printf("OVERMAP enter\n");
     { SET_BANK(overmap_map);
       overmap_scan_map();
       RESTORE_BANK(); }
