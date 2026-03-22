@@ -2,6 +2,8 @@
   "permissions": {
     "allow": [
       "Read(**)",
+      "Glob(*)",
+      "Grep(*)",
       "Bash(git:*)",
       "Bash(xargs ls:*)",
       "Bash(make:*)",
