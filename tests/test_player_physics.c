@@ -59,7 +59,7 @@ void test_friction_decelerates_to_zero(void) {
  * Moving right (gas): new_px=137, corner=144 (col 18 = sand) → blocked → vx=0. */
 void test_wall_zeros_vx_not_vy(void) {
     player_set_pos(136, 720);
-    input = J_RIGHT | J_UP | J_A;  /* face NE, gas → vx blocked by wall, vy moves */
+    input = J_RIGHT | J_UP;  /* face NE, gas → vx blocked by wall, vy moves */
     player_update();
     TEST_ASSERT_EQUAL_INT8(0,              player_get_vx()); /* wall blocks x */
     TEST_ASSERT_EQUAL_INT8(-PLAYER_ACCEL,  player_get_vy()); /* UP still moves forward */
@@ -82,7 +82,7 @@ void test_wall_zeros_vy_not_vx(void) {
 /* NE facing + gas: both axes accumulate to PLAYER_MAX_SPEED independently. */
 void test_x_and_y_axes_accumulate_independently(void) {
     uint8_t i;
-    input = J_RIGHT | J_UP | J_A;  /* face NE, gas → vx+1 and vy-1 per frame */
+    input = J_RIGHT | J_UP;  /* face NE, gas → vx+1 and vy-1 per frame */
     for (i = 0; i < PLAYER_MAX_SPEED / PLAYER_ACCEL; i++) {
         player_update();
     }

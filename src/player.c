@@ -165,8 +165,8 @@ void player_apply_physics(uint8_t buttons, TileType terrain) BANKED {
     /* Step 1: decode facing direction from D-pad */
     player_dir = decode_dir(buttons);
 
-    /* Step 2: is the gas button held? (disabled on oil) */
-    gas = (terrain != TILE_OIL && (buttons & J_A)) ? 1u : 0u;
+    /* Step 2: any D-pad button held = gas (disabled on oil) */
+    gas = (terrain != TILE_OIL && (buttons & (J_UP | J_DOWN | J_LEFT | J_RIGHT))) ? 1u : 0u;
 
     /* Step 3: coast friction per axis.
      * Friction is suppressed on an axis when gas is being applied along it. */
