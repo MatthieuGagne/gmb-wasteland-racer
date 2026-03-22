@@ -60,7 +60,7 @@ class TestValidation(unittest.TestCase):
 
     # 6 — 3 choices is OK
     def test_three_choices_ok(self):
-        data = _one_npc(nodes=[{"idx":0,"text":"Hi","choices":["a","b","c"],"next":[1,"END","END"]}])
+        data = _one_npc(nodes=[{"idx":0,"text":"Hi","choices":["a","b","c"],"next":["END","END","END"]}])
         conv.validate(data)
 
     # 7 — too many NPCs
