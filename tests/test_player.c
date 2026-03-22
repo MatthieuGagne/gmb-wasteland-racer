@@ -3,6 +3,7 @@
 #include "../src/input.h"
 #include "player.h"
 #include "camera.h"
+#include "../src/damage.h"
 
 /* input/prev_input globals defined in tests/mocks/input_globals.c */
 
@@ -12,6 +13,7 @@ void setUp(void) {
     mock_vram_clear();
     mock_move_sprite_reset();
     camera_init(88, 720);  /* cam_y = 648 */
+    damage_init();
     player_init();
 }
 void tearDown(void) {}
@@ -44,7 +46,7 @@ void test_player_update_moves_up(void) {
 }
 
 void test_player_update_moves_down(void) {
-    input = J_B;   /* B while stopped = reverse (backward = positive vy) */
+    input = J_DOWN;   /* DOWN while stopped = reverse (backward = positive vy) */
     player_update();
     TEST_ASSERT_EQUAL_INT16(721, player_get_y());
 }
@@ -130,37 +132,36 @@ void test_player_render_both_halves_aligned(void) {
 
 /* ===== Gas / Brake / Facing tests (issue #132) ============================= */
 
-/* AC5: D-pad UP/DOWN have no effect on velocity — only A/B control Y axis */
-void test_dpad_up_down_does_not_change_velocity(void) {
-    player_apply_physics(J_UP,   TILE_ROAD);
+/* After remap: A=gun(no-op), B=special(no-op) — neither changes velocity */
+void test_ab_buttons_do_not_change_velocity(void) {
+    player_apply_physics(J_A, TILE_ROAD);
     TEST_ASSERT_EQUAL_INT8(0, player_get_vx());
     TEST_ASSERT_EQUAL_INT8(0, player_get_vy());
-    player_apply_physics(J_DOWN, TILE_ROAD);
+    player_apply_physics(J_B, TILE_ROAD);
     TEST_ASSERT_EQUAL_INT8(0, player_get_vx());
     TEST_ASSERT_EQUAL_INT8(0, player_get_vy());
 }
 
-/* AC1: J_A (gas) accelerates in the current facing direction.
- * setUp calls player_init() which sets facing = up (dy=-1).
- * Gas should give vy = -1. */
+/* AC1: J_UP (gas) accelerates forward (negative vy = up).
+ * setUp resets player to stopped; gas should give vy = -1. */
 void test_gas_while_facing_up_decreases_vy(void) {
-    player_apply_physics(J_A, TILE_ROAD);
+    player_apply_physics(J_UP, TILE_ROAD);
     TEST_ASSERT_EQUAL_INT8( 0, player_get_vx());
     TEST_ASSERT_EQUAL_INT8(-1, player_get_vy());
 }
 
-/* AC1: A always moves forward (negative vy) even when D-pad down is held.
- * D-pad direction does not affect A/B axis. */
+/* Steering (J_LEFT/J_RIGHT) does not affect forward gas (J_UP).
+ * Both axes are independent: vx steers, vy accelerates. */
 void test_gas_always_moves_forward_regardless_of_dpad(void) {
-    player_apply_physics(J_DOWN | J_A, TILE_ROAD);
-    TEST_ASSERT_EQUAL_INT8( 0, player_get_vx());
+    player_apply_physics(J_RIGHT | J_UP, TILE_ROAD);
+    TEST_ASSERT_EQUAL_INT8( 1, player_get_vx());
     TEST_ASSERT_EQUAL_INT8(-1, player_get_vy());
 }
 
 /* AC4: J_B while stopped reverses in the direction opposite to facing.
  * Default facing = up (dy=-1), so reverse = vy += 1. */
 void test_brake_while_stopped_facing_up_reverses_down(void) {
-    player_apply_physics(J_B, TILE_ROAD);
+    player_apply_physics(J_DOWN, TILE_ROAD);
     TEST_ASSERT_EQUAL_INT8(0,  player_get_vx());
     TEST_ASSERT_EQUAL_INT8(1,  player_get_vy());
 }
@@ -169,14 +170,66 @@ void test_brake_while_stopped_facing_up_reverses_down(void) {
  * Steer right (vx=1), then B: coast friction + brake. vx must not go negative. */
 void test_brake_while_moving_laterally_does_not_reverse_x(void) {
     player_apply_physics(J_RIGHT, TILE_ROAD);   /* vx = 1 */
-    player_apply_physics(J_B,     TILE_ROAD);   /* not stopped: brake, coast clears vx */
+    player_apply_physics(J_DOWN,  TILE_ROAD);   /* not stopped: brake, coast clears vx */
     TEST_ASSERT_GREATER_OR_EQUAL_INT8(0, player_get_vx());
+}
+
+/* --- flicker: HP > 2 = no hide --- */
+void test_render_at_full_hp_calls_move_sprite_normally(void) {
+    /* setUp calls damage_init → full HP */
+    mock_move_sprite_reset();
+    player_render();
+    /* Both halves must be placed on-screen (y > 0) */
+    TEST_ASSERT_GREATER_THAN_UINT8(0u, mock_sprite_y[0]);
+    TEST_ASSERT_GREATER_THAN_UINT8(0u, mock_sprite_y[1]);
+}
+
+/* --- flicker: HP <= 2, frame counter bit 3 set = hide --- */
+void test_render_at_low_hp_hides_on_flicker_frame(void) {
+    uint8_t i;
+    /* Force hp to 1 */
+    damage_init();
+    damage_apply((uint8_t)(PLAYER_MAX_HP - 1u));  /* hp = 1 */
+    /* Burn 30 frames of i-frames */
+    for (i = 0u; i < DAMAGE_INVINCIBILITY_FRAMES; i++) damage_tick();
+    /* Call render 8 times (frame counter = 0..7, bit3 = 0: visible)
+     * then 1 more (frame counter = 8, bit3 = 1: hidden) */
+    for (i = 0u; i < 8u; i++) player_render();
+    mock_move_sprite_reset();
+    player_render();  /* frame_counter == 8, bit3 set → hide */
+    TEST_ASSERT_EQUAL_UINT8(0u, mock_sprite_y[0]);
+    TEST_ASSERT_EQUAL_UINT8(0u, mock_sprite_y[1]);
+}
+
+/* --- flicker: HP <= 2, frame counter bit 3 clear = visible --- */
+void test_render_at_low_hp_visible_on_non_flicker_frame(void) {
+    uint8_t i;
+    damage_init();
+    damage_apply((uint8_t)(PLAYER_MAX_HP - 1u));
+    for (i = 0u; i < DAMAGE_INVINCIBILITY_FRAMES; i++) damage_tick();
+    /* frame_counter=0 at init, bit3=0: visible */
+    mock_move_sprite_reset();
+    player_render();
+    TEST_ASSERT_GREATER_THAN_UINT8(0u, mock_sprite_y[0]);
+}
+
+/* --- repair tile healing ------------------------------------------------ */
+
+/* Tests damage_heal directly — TILE_REPAIR integration is verified in smoketest
+ * (requires map edit; mock track returns TILE_ROAD for all road coordinates). */
+void test_heal_call_restores_hp(void) {
+    uint8_t i;
+    damage_init();
+    damage_apply(3u);                              /* hp = PLAYER_MAX_HP - 3 */
+    for (i = 0u; i < DAMAGE_INVINCIBILITY_FRAMES; i++) damage_tick();
+    damage_heal(DAMAGE_REPAIR_AMOUNT);             /* hp += 2 */
+    TEST_ASSERT_EQUAL_UINT8(PLAYER_MAX_HP - 1u, damage_get_hp());
 }
 
 /* AC3: J_B while moving must NOT reverse the car. */
 void test_brake_while_moving_does_not_reverse(void) {
-    player_apply_physics(J_RIGHT | J_A, TILE_ROAD);  /* vx = 1 */
-    player_apply_physics(J_B,           TILE_ROAD);  /* brake, not reverse */
+    player_apply_physics(J_RIGHT | J_UP, TILE_ROAD);  /* vx = 1, gas forward */
+    player_apply_physics(J_DOWN,         TILE_ROAD);  /* brake, not reverse */
     /* vx must not go negative */
     TEST_ASSERT_GREATER_OR_EQUAL_INT8(0, player_get_vx());
 }
@@ -197,11 +250,15 @@ int main(void) {
     RUN_TEST(test_player_init_claims_two_sprite_slots);
     RUN_TEST(test_player_render_calls_move_sprite_twice);
     RUN_TEST(test_player_render_both_halves_aligned);
-    RUN_TEST(test_dpad_up_down_does_not_change_velocity);
+    RUN_TEST(test_ab_buttons_do_not_change_velocity);
     RUN_TEST(test_gas_while_facing_up_decreases_vy);
     RUN_TEST(test_gas_always_moves_forward_regardless_of_dpad);
     RUN_TEST(test_brake_while_stopped_facing_up_reverses_down);
     RUN_TEST(test_brake_while_moving_laterally_does_not_reverse_x);
     RUN_TEST(test_brake_while_moving_does_not_reverse);
+    RUN_TEST(test_render_at_full_hp_calls_move_sprite_normally);
+    RUN_TEST(test_render_at_low_hp_hides_on_flicker_frame);
+    RUN_TEST(test_render_at_low_hp_visible_on_non_flicker_frame);
+    RUN_TEST(test_heal_call_restores_hp);
     return UNITY_END();
 }

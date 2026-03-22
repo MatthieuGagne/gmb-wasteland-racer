@@ -16,6 +16,7 @@ static int8_t  vx;
 static int8_t  vy;
 static uint8_t player_sprite_slot     = 0;
 static uint8_t player_sprite_slot_bot = 0;
+static uint8_t player_flicker_tick;
 
 /* Returns 1 if all 4 corners of a player at world (wx, wy) are on track. */
 static uint8_t corners_passable(int16_t wx, int16_t wy) {
@@ -37,6 +38,7 @@ void player_init(void) BANKED {
     load_track_start_pos(&px, &py);
     vx = 0;
     vy = 0;
+    player_flicker_tick = 0u;
     SHOW_SPRITES;
 }
 
@@ -68,15 +70,25 @@ void player_update(void) BANKED {
         vy = 0;
         damage_apply(1u);
     }
+
+    /* Repair tile: heal HP when standing on a repair pad */
+    if (terrain == TILE_REPAIR) {
+        damage_heal(DAMAGE_REPAIR_AMOUNT);
+    }
 }
 
 void player_render(void) BANKED {
-    /* cam_x is always 0; cam_y is uint16_t but py >= cam_y is enforced so offset fits uint8_t */
     uint8_t hw_x = (uint8_t)(px + 8);
     uint8_t hw_y = (uint8_t)((int16_t)py - (int16_t)cam_y + 16);
-    move_sprite(player_sprite_slot,     hw_x, hw_y);
-    move_sprite(player_sprite_slot_bot, hw_x, (uint8_t)(hw_y + 8u));
-
+    player_flicker_tick++;
+    if (damage_get_hp() <= 2u && (player_flicker_tick & 8u)) {
+        /* Hide: move both halves off-screen (y=0 is above OAM visible area) */
+        move_sprite(player_sprite_slot,     0u, 0u);
+        move_sprite(player_sprite_slot_bot, 0u, 0u);
+    } else {
+        move_sprite(player_sprite_slot,     hw_x, hw_y);
+        move_sprite(player_sprite_slot_bot, hw_x, (uint8_t)(hw_y + 8u));
+    }
 }
 
 void player_set_pos(int16_t x, int16_t y) BANKED {
@@ -105,17 +117,17 @@ void player_apply_physics(uint8_t buttons, TileType terrain) BANKED {
 
     /* Step 2: determine coast friction per terrain and per axis.
      * X: no friction while D-pad L/R held (steering accumulates freely).
-     * Y: no friction while A held (gas accumulates freely). */
+     * Y: no friction while J_UP held (gas accumulates freely). */
     if (terrain == TILE_SAND) {
         fric_x = (buttons & (J_LEFT | J_RIGHT)) ? 0u : (uint8_t)(PLAYER_FRICTION * TERRAIN_SAND_FRICTION_MUL);
-        fric_y = (buttons & J_A)                 ? 0u : (uint8_t)(PLAYER_FRICTION * TERRAIN_SAND_FRICTION_MUL);
+        fric_y = (buttons & J_UP)                ? 0u : (uint8_t)(PLAYER_FRICTION * TERRAIN_SAND_FRICTION_MUL);
     } else if (terrain == TILE_OIL) {
         fric_x = 0;
         fric_y = 0;
     } else {
         /* Road / Boost */
         fric_x = (buttons & (J_LEFT | J_RIGHT)) ? 0u : (uint8_t)PLAYER_FRICTION;
-        fric_y = (buttons & J_A)                 ? 0u : (uint8_t)PLAYER_FRICTION;
+        fric_y = (buttons & J_UP)                ? 0u : (uint8_t)PLAYER_FRICTION;
     }
 
     /* Step 3: apply X coast friction */
@@ -136,20 +148,20 @@ void player_apply_physics(uint8_t buttons, TileType terrain) BANKED {
         if (buttons & J_RIGHT) vx = (int8_t)(vx + (int8_t)PLAYER_ACCEL);
     }
 
-    /* Step 6: A = gas (always forward = negative vy, disabled on oil) */
-    if ((buttons & J_A) && terrain != TILE_OIL) {
+    /* Step 6: J_UP = gas (always forward = negative vy, disabled on oil) */
+    if ((buttons & J_UP) && terrain != TILE_OIL) {
         vy = (int8_t)(vy - (int8_t)PLAYER_ACCEL);
     }
 
-    /* Step 7: B = brake while moving / reverse while stopped (Y axis) */
-    if (buttons & J_B) {
+    /* Step 7: J_DOWN = brake while moving / reverse while stopped (Y axis, disabled on oil) */
+    if ((buttons & J_DOWN) && terrain != TILE_OIL) {
         if (!stopped) {
             /* Braking: extra friction on vy */
             for (i = 0; i < PLAYER_FRICTION; i++) {
                 if      (vy > 0) vy = (int8_t)(vy - 1);
                 else if (vy < 0) vy = (int8_t)(vy + 1);
             }
-        } else if (terrain != TILE_OIL) {
+        } else {
             /* Reverse: thrust backward (positive vy), capped at PLAYER_REVERSE_MAX_SPEED */
             vy = (int8_t)(vy + (int8_t)PLAYER_ACCEL);
             if (vy > (int8_t)PLAYER_REVERSE_MAX_SPEED)
