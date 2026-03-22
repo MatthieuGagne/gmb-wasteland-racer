@@ -166,11 +166,11 @@ static void enter(void) {
       set_bkg_tiles(0u, 0u, OVERMAP_W, OVERMAP_H, overmap_map);
       RESTORE_BANK(); }
     move_bkg(0u, 0u);   /* reset SCY: overmap has no vertical scroll */
+    overmap_move_sprite(); /* pre-set OAM so first visible frame has car in correct position */
     DISPLAY_ON;
 
     SHOW_BKG;
     SHOW_SPRITES;
-    overmap_move_sprite();
 }
 
 static void update(void) {
