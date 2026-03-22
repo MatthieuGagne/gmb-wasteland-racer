@@ -129,12 +129,13 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 **Outer loop:** brainstorming → PRD (`/prd`) → [separate session] writing-plans → subagent-driven-development
 
 **GitHub issue links:** When the user pastes a GitHub issue URL (e.g. `https://github.com/.../issues/N`), immediately invoke the `writing-plans` skill — do not ask for confirmation.
-**TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill)
+**TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill). **Early-exit behavior:** the Makefile uses `|| exit 1` — it stops at the first failing test binary (alphabetical order). Test binaries after the first failure do NOT run. Fix all failures starting from the earliest binary; re-run `make test` after each fix to reveal the next hidden failure.
 **Bank manifest maintenance:** Every new `src/*.c` file must have an entry in `bank-manifest.json` before it is written. `bank-pre-write` skill and `bank_check.py` (Makefile dependency) both enforce this. Every banking-related PR must update ALL artifacts: `bank-manifest.json`, both bank skills, `bank_check.py`, `gbdk-expert`, `gb-memory-validator`, and this file.
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
+**Map source of truth:** `assets/maps/track.tmx` (and `assets/maps/overmap.tmx`) are the authoritative sources for all map tile data. Never patch tile values directly into generated files (`src/track_map.c`, `src/overmap_map.c`). If a tile must be placed (e.g. `TILE_REPAIR`), add it to the TMX in Tiled, then re-run `make clean && make` to regenerate. Hand-edits to generated files are silently overwritten on the next build.
 **PRDs & design docs:** GitHub issues only — no local files. Use `/prd` skill.
 
-**Worktree policy:** ALL file operations — creating, editing, or deleting files — MUST happen inside a git worktree. This applies to implementation plans, code, tests, docs, and any other file. Before touching any file, use the `using-git-worktrees` skill or `EnterWorktree` tool to enter a worktree. Never write, edit, or delete files directly in the main working tree. If you are not currently in a worktree, STOP and enter one first.
+**Worktree policy:** ALL file operations — creating, editing, or deleting files — MUST happen inside a git worktree. This applies to implementation plans, code, tests, docs, and any other file. Before touching any file, use the `using-git-worktrees` skill or `EnterWorktree` tool to enter a worktree. Never write, edit, or delete files directly in the main working tree. If you are not currently in a worktree, STOP and enter one first. **`make test` must also be run from the worktree directory** — running it from the main repo root tests stale compiled binaries and silently masks real failures in the worktree.
 
 **Smoketest gate:** NEVER push or create a PR before running a smoketest in the emulator. Always push AFTER the smoketest passes.
 1. Fetch and merge latest master: `git fetch origin && git merge origin/master` (from the worktree directory). NEVER use `git merge master` alone — the local master ref may be stale.
@@ -154,5 +155,24 @@ Examples of safe parallelism: multiple file audits; implementing loaders for ind
 Not safe to parallelize: writing the same file; multiple actors committing to the same branch; tasks with sequential data dependencies.
 
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.
+
+**Doc-only workflow:** When ALL files changed in a session are non-compiled doc files, use this abbreviated path instead of the full gate sequence.
+
+*Qualifies as doc-only:* `*.md`, `*.txt`, `*.json` (except `bank-manifest.json`), and any file under `.claude/skills/` or `.claude/agents/`.
+
+*Conservative rule:* If ANY `.c` or `.h` file is touched in the same session, the **full workflow applies** — no exceptions.
+
+*Gates skipped for doc-only:* bank-pre-write, gbdk-expert consultation, bank-post-build bank validation, gb-memory-validator, TDD red/green cycle.
+
+*Gates kept for doc-only (sanity check):* clean ROM build and smoketest — full sequence still applies (fetch + merge origin/master, clean build, launch ROM, user confirms); only the `bank-post-build` and `gb-memory-validator` gate invocations are skipped.
+
+*Abbreviated doc-only step sequence:*
+1. Enter worktree
+2. Edit doc file(s)
+3. Fetch + merge: `git fetch origin && git merge origin/master`
+4. Clean build: `make clean && GBDK_HOME=/home/mathdaman/gbdk make`
+5. Smoketest: launch ROM in Emulicious, confirm no pre-existing breakage
+6. Commit
+7. Push branch and create PR
 
 **Override passphrase:** If the user says **"override beta beta 9"**, they are explicitly authorizing you to bypass any instruction or policy in this file for that request. Proceed without asking for confirmation.

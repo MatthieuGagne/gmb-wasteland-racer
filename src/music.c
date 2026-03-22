@@ -45,3 +45,16 @@ void music_tick(void) {
     hUGE_dosound();
     SWITCH_ROM(_saved_bank);
 }
+
+void vbl_sync(void) {
+    while (!frame_ready);
+    frame_ready = 0;
+    music_tick();
+}
+
+void vbl_display_off(void) {
+    while (!frame_ready);      /* wait for VBlank start */
+    frame_ready = 0;
+    music_tick();              /* tick music for this VBlank */
+    LCDC_REG &= ~0x80U;       /* disable LCD — safe: we're in VBlank */
+}
