@@ -77,7 +77,7 @@ void player_update(void) BANKED {
     player_apply_physics(input, terrain);
 
     /* Fire machine gun on Select (held + cooldown managed inside projectile module) */
-    if (KEY_PRESSED(J_SELECT)) {
+    if (KEY_PRESSED(J_A)) {
         uint8_t scr_x = (uint8_t)((int16_t)px + 8);
         uint8_t scr_y = (uint8_t)((int16_t)py - (int16_t)cam_y + 16);
         projectile_fire(scr_x, scr_y, player_dir);
