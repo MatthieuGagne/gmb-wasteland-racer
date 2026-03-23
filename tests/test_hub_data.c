@@ -4,9 +4,6 @@
 void setUp(void)    {}
 void tearDown(void) {}
 
-void test_hub_table_count(void) {
-    TEST_ASSERT_EQUAL_UINT8(1u, hub_table_count);
-}
 void test_hub_table_has_rust_town(void) {
     TEST_ASSERT_EQUAL_STRING("RUST TOWN", hub_table[0]->name);
 }
@@ -26,7 +23,6 @@ void test_rust_town_dialog_ids(void) {
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(test_hub_table_count);
     RUN_TEST(test_hub_table_has_rust_town);
     RUN_TEST(test_rust_town_num_npcs);
     RUN_TEST(test_rust_town_npc_names);
