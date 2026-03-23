@@ -45,10 +45,22 @@ def patch_config_define(config_text, name, new_value):
     return new_text
 
 
-def validate(data):
+def validate(data, max_npcs=None):
+    """Validate NPC dialog data.
+
+    max_npcs: if provided, len(npcs) must equal exactly this value (enforced by
+    generator when config.h is available). If None, only an upper-bound check
+    against the module-level MAX_NPCS constant is applied (used by unit tests
+    with partial fixtures).
+    """
     npcs = data["npcs"]
-    if len(npcs) > MAX_NPCS:
-        raise ValueError(f"Too many NPCs: {len(npcs)} > {MAX_NPCS} (MAX_NPCS=6)")
+    if max_npcs is not None:
+        if len(npcs) != max_npcs:
+            raise ValueError(
+                f"NPC count mismatch: got {len(npcs)}, expected {max_npcs} "
+                f"(MAX_NPCS={max_npcs} in config.h)")
+    elif len(npcs) > MAX_NPCS:
+        raise ValueError(f"Too many NPCs: {len(npcs)} > {MAX_NPCS} (MAX_NPCS={MAX_NPCS})")
     for npc in npcs:
         npc_id = npc["id"]
         name   = npc["name"]

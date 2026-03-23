@@ -169,6 +169,34 @@ class TestEmission(unittest.TestCase):
         self.assertEqual(conv.generate_c(data), conv.generate_c(data))
 
 
+class TestValidateWithExplicitMax(unittest.TestCase):
+
+    # 28 — validate with explicit max_npcs raises on mismatch (too few)
+    def test_validate_too_few_npcs_raises(self):
+        data = _one_npc()  # 1 NPC
+        with self.assertRaises(ValueError) as cm:
+            conv.validate(data, max_npcs=3)
+        self.assertIn("1", str(cm.exception))
+        self.assertIn("3", str(cm.exception))
+
+    # 29 — validate with explicit max_npcs raises on mismatch (too many)
+    def test_validate_too_many_npcs_explicit_raises(self):
+        data = {"npcs": [{"id": i, "name": f"NPC{i}", "nodes": [
+            {"idx": 0, "text": "Hi", "choices": [], "next": ["END"]}
+        ]} for i in range(4)]}
+        with self.assertRaises(ValueError) as cm:
+            conv.validate(data, max_npcs=3)
+        self.assertIn("4", str(cm.exception))
+        self.assertIn("3", str(cm.exception))
+
+    # 30 — validate with exact match passes
+    def test_validate_exact_match_passes(self):
+        data = {"npcs": [{"id": i, "name": f"NPC{i}", "nodes": [
+            {"idx": 0, "text": "Hi", "choices": [], "next": ["END"]}
+        ]} for i in range(3)]}
+        conv.validate(data, max_npcs=3)  # must not raise
+
+
 # ── config.h helpers ─────────────────────────────────────────────────────────
 
 class TestConfigHelpers(unittest.TestCase):
