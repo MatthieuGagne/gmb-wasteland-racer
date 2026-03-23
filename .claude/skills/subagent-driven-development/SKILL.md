@@ -117,7 +117,13 @@ When dispatching the implementer subagent, include ALL of the following in the p
 
 ## Parallel Implementer Batches
 
-When the plan flags tasks as **parallelizable** (different output files, no shared state), dispatch 2–3 implementer agents in a single message instead of sequentially.
+When the plan's `#### Parallel Execution Groups` table marks a group as `(parallel)`, dispatch all tasks in that group as concurrent implementer agents in a single message. The group table is the **authoritative source** — do not re-analyze file dependencies at runtime.
+
+**How to read the group table:**
+- `(parallel)` group → dispatch all tasks in the group as concurrent implementers in one message
+- `(sequential)` group → dispatch one task at a time, waiting for completion before starting the next
+- No group table in plan → fall back to per-task `**Parallelizable with:**` annotations
+- Neither table nor annotations present → treat all tasks as sequential
 
 See `dispatching-parallel-agents` skill for full rules. Summary:
 1. Dispatch 2–3 implementers in one message (each writing different files, no shared git commits)
@@ -188,6 +194,20 @@ Code reviewer: ✅ Approved
 
 [Mark Task 1 complete]
 
+Task 3 + Task 4: Parallel batch (Group A in Parallel Execution Groups table)
+
+[Read group table: Tasks 3 and 4 are (parallel) — different output files]
+[Dispatch implementer for Task 3 AND implementer for Task 4 in a single message]
+
+Implementer 3: [Implements Task 3, commits sha-abc]
+Implementer 4: [Implements Task 4, commits sha-def]
+
+[Dispatch spec reviewer + code quality reviewer in parallel for the batch]
+Spec reviewer: ✅ Both tasks spec compliant
+Code reviewer: ✅ Both approved
+
+[Mark Task 3 complete, Task 4 complete]
+
 ...
 
 [After all tasks]
@@ -214,7 +234,6 @@ Final reviewer: All requirements met
 - Ignore subagent questions (answer before letting them proceed)
 - Accept "close enough" on spec compliance
 - Skip review loops (reviewer found issues = implementer fixes = review again)
-- Start code quality review before spec compliance is ✅
 - Move to next task while either review has open issues
 - Skip bank-pre-write or gbdk-expert before any C write
 - Skip bank-post-build or gb-memory-validator in post-build review

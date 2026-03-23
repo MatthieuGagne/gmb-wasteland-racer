@@ -57,7 +57,26 @@ Non-C tasks (markdown, Python, JSON, assets): write → verify → commit. No ba
 
 A good batch boundary = any point where the game should visually work end-to-end (even partially). If a batch cannot be independently smoke-tested, the plan must explain why.
 
-Use this template for every checkpoint:
+### Dependency Analysis (required before writing each smoketest checkpoint block)
+
+After drafting all tasks in a batch, before inserting the Smoketest Checkpoint block:
+
+1. List all output files for each task in the batch
+2. Mark as **sequential** any two tasks that write the same file, or where Task B compiles against a symbol Task A defines
+3. Group remaining tasks into independent layers — tasks with the same `Depends on` set are parallelizable with each other
+4. Go back and fill in `**Depends on:**` and `**Parallelizable with:**` on each task
+5. Insert a `#### Parallel Execution Groups` table immediately before the Smoketest Checkpoint block (use the template below)
+
+Use this template for the parallel group table that precedes every checkpoint:
+
+```markdown
+#### Parallel Execution Groups — Smoketest Checkpoint N
+
+| Group | Tasks | Notes |
+|-------|-------|-------|
+| A (parallel) | Task 1, Task 2 | Different output files, no shared state |
+| B (sequential) | Task 3 | Depends on Group A — must run after both complete |
+```
 
 ````markdown
 ### Smoketest Checkpoint N — [what to verify visually]
@@ -120,6 +139,9 @@ Use this template for any task that creates or modifies `src/*.c` or `src/*.h`:
 **Files:**
 - Create: `src/foo.c`, `src/foo.h`
 - Test: `tests/test_foo.c`
+
+**Depends on:** none   ← or "Task N, Task M" — tasks whose output this task reads or requires (use task numbers matching plan headings)
+**Parallelizable with:** none   ← or "Task N, Task M" — tasks at the same dependency layer (use task numbers matching plan headings)
 
 > **Entity system?** Use SoA (Structure-of-Arrays). Capacity constants in `src/config.h`.
 > Never AoS — SDCC cannot eliminate stride multiplication on SM83.
@@ -200,6 +222,9 @@ Use this template for tasks that do NOT involve `src/*.c` or `src/*.h`:
 **Files:**
 - Create/Modify: `path/to/file.md`
 
+**Depends on:** none   ← or "Task N, Task M" — tasks whose output this task reads or requires (use task numbers matching plan headings)
+**Parallelizable with:** none   ← or "Task N, Task M" — tasks at the same dependency layer (use task numbers matching plan headings)
+
 **Step 1: Write the content**
 
 [exact content or diff]
@@ -224,7 +249,8 @@ git commit -m "feat: add/update X"
 - DRY, YAGNI, TDD, frequent commits
 - C files ALWAYS get the 11-step template with all HARD GATE steps
 - Group tasks into batches of 2-4; each batch MUST end with a Smoketest Checkpoint
-- Mark tasks that create independent files as parallelizable — implementer can dispatch them as concurrent subagents
+- Annotate every task with `**Depends on:**` and `**Parallelizable with:**` — executor reads these; vague hints are not enough
+- Insert a `#### Parallel Execution Groups` table before every Smoketest Checkpoint block — this is the executor's source of truth for parallel dispatch
 
 ## Lessons Learned Gate
 

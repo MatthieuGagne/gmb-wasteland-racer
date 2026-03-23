@@ -169,5 +169,167 @@ class TestEmission(unittest.TestCase):
         self.assertEqual(conv.generate_c(data), conv.generate_c(data))
 
 
+class TestValidateWithExplicitMax(unittest.TestCase):
+
+    # 28 — validate with explicit max_npcs raises on mismatch (too few)
+    def test_validate_too_few_npcs_raises(self):
+        data = _one_npc()  # 1 NPC
+        with self.assertRaises(ValueError) as cm:
+            conv.validate(data, max_npcs=3)
+        self.assertIn("1", str(cm.exception))
+        self.assertIn("3", str(cm.exception))
+
+    # 29 — validate with explicit max_npcs raises on mismatch (too many)
+    def test_validate_too_many_npcs_explicit_raises(self):
+        data = {"npcs": [{"id": i, "name": f"NPC{i}", "nodes": [
+            {"idx": 0, "text": "Hi", "choices": [], "next": ["END"]}
+        ]} for i in range(4)]}
+        with self.assertRaises(ValueError) as cm:
+            conv.validate(data, max_npcs=3)
+        self.assertIn("4", str(cm.exception))
+        self.assertIn("3", str(cm.exception))
+
+    # 30 — validate with exact match passes
+    def test_validate_exact_match_passes(self):
+        data = {"npcs": [{"id": i, "name": f"NPC{i}", "nodes": [
+            {"idx": 0, "text": "Hi", "choices": [], "next": ["END"]}
+        ]} for i in range(3)]}
+        conv.validate(data, max_npcs=3)  # must not raise
+
+
+# ── Hub data generation tests ─────────────────────────────────────────────────
+
+def _npc_stub(npc_id, name):
+    return {"id": npc_id, "name": name,
+            "nodes": [{"idx": 0, "text": "...", "choices": [], "next": ["END"]}]}
+
+
+class TestGenerateHubC(unittest.TestCase):
+
+    def _hub_data(self):
+        return {
+            "hubs": [
+                {"id": 0, "name": "RUST TOWN", "npc_ids": [0, 1, 2]}
+            ]
+        }
+
+    def _npcs_data(self):
+        return {"npcs": [
+            _npc_stub(0, "MECHANIC"),
+            _npc_stub(1, "TRADER"),
+            _npc_stub(2, "DRIFTER"),
+        ]}
+
+    def _emit(self, hubs=None, npcs=None):
+        return conv.generate_hub_c(hubs or self._hub_data(), npcs or self._npcs_data())
+
+    # 31 — GENERATED header present
+    def test_hub_generated_header(self):
+        out = self._emit()
+        self.assertIn("// GENERATED", out)
+
+    # 32 — no #pragma bank (bank 0)
+    def test_hub_no_pragma_bank(self):
+        out = self._emit()
+        self.assertNotIn("#pragma bank", out)
+
+    # 33 — hub name present
+    def test_hub_name_emitted(self):
+        out = self._emit()
+        self.assertIn('"RUST TOWN"', out)
+
+    # 34 — NPC names derived from npcs.json
+    def test_hub_npc_names_from_npcs(self):
+        out = self._emit()
+        self.assertIn('"MECHANIC"', out)
+        self.assertIn('"TRADER"', out)
+        self.assertIn('"DRIFTER"', out)
+
+    # 35 — npc_dialog_ids contain the npc_ids from hubs.json
+    def test_hub_npc_dialog_ids(self):
+        out = self._emit()
+        # IDs 0, 1, 2 emitted as uint8_t literals
+        self.assertIn("0u", out)
+        self.assertIn("1u", out)
+        self.assertIn("2u", out)
+
+    # 36 — hub_table array emitted
+    def test_hub_table_emitted(self):
+        out = self._emit()
+        self.assertIn("hub_table[]", out)
+        self.assertIn("hub_table_count", out)
+
+    # 37 — hub_table_count matches number of hubs
+    def test_hub_table_count_correct(self):
+        out = self._emit()
+        self.assertIn("hub_table_count = 1u", out)
+
+    # 38 — invalid NPC id raises
+    def test_hub_invalid_npc_id_raises(self):
+        hubs = {"hubs": [{"id": 0, "name": "HUB", "npc_ids": [99]}]}
+        with self.assertRaises(ValueError) as cm:
+            conv.generate_hub_c(hubs, self._npcs_data())
+        self.assertIn("99", str(cm.exception))
+
+    # 39 — compute_max_hub_npcs returns max roster length
+    def test_compute_max_hub_npcs(self):
+        hubs = {"hubs": [
+            {"id": 0, "name": "A", "npc_ids": [0, 1]},
+            {"id": 1, "name": "B", "npc_ids": [0, 1, 2]},
+        ]}
+        self.assertEqual(conv.compute_max_hub_npcs(hubs), 3)
+
+    # 40 — two hubs: both emitted, table has 2 entries
+    def test_two_hubs_emitted(self):
+        npcs = {"npcs": [_npc_stub(i, f"NPC{i}") for i in range(3)]}
+        hubs = {"hubs": [
+            {"id": 0, "name": "RUST TOWN", "npc_ids": [0]},
+            {"id": 1, "name": "DUST CITY", "npc_ids": [1, 2]},
+        ]}
+        out = conv.generate_hub_c(hubs, npcs)
+        self.assertIn('"RUST TOWN"', out)
+        self.assertIn('"DUST CITY"', out)
+        self.assertIn("hub_table_count = 2u", out)
+
+
+# ── config.h helpers ─────────────────────────────────────────────────────────
+
+class TestConfigHelpers(unittest.TestCase):
+
+    _SAMPLE_CONFIG = (
+        "#define MAX_NPCS     6\n"
+        "#define OTHER        3\n"
+        "#define MAX_HUB_NPCS 3u\n"
+    )
+
+    # 23 — parse_max_npcs extracts integer value
+    def test_parse_max_npcs_returns_value(self):
+        self.assertEqual(conv.parse_max_npcs(self._SAMPLE_CONFIG), 6)
+
+    # 24 — parse_max_npcs raises if define is missing
+    def test_parse_max_npcs_missing_raises(self):
+        with self.assertRaises(ValueError) as cm:
+            conv.parse_max_npcs("#define OTHER 3\n")
+        self.assertIn("MAX_NPCS", str(cm.exception))
+
+    # 25 — patch_config_define replaces integer value
+    def test_patch_config_define_replaces_value(self):
+        result = conv.patch_config_define(self._SAMPLE_CONFIG, "MAX_NPCS", 7)
+        self.assertIn("#define MAX_NPCS     7", result)
+        self.assertNotIn("#define MAX_NPCS     6", result)
+
+    # 26 — patch_config_define leaves other defines untouched
+    def test_patch_config_define_leaves_others(self):
+        result = conv.patch_config_define(self._SAMPLE_CONFIG, "MAX_NPCS", 7)
+        self.assertIn("#define OTHER        3", result)
+        self.assertIn("#define MAX_HUB_NPCS 3u", result)
+
+    # 27 — patch_config_define raises if define is missing
+    def test_patch_config_define_missing_raises(self):
+        with self.assertRaises(ValueError) as cm:
+            conv.patch_config_define(self._SAMPLE_CONFIG, "NONEXISTENT", 9)
+        self.assertIn("NONEXISTENT", str(cm.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

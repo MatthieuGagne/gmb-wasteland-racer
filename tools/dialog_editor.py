@@ -42,7 +42,6 @@ import subprocess
 import sys
 import textwrap
 
-MAX_NPCS     = 6
 MAX_TEXT_LEN = 63
 MAX_CHOICES  = 3
 WARN_LEN     = 54   # yellow warning threshold
@@ -54,6 +53,21 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_JSON = os.path.join(SCRIPT_DIR, '..', 'assets', 'dialog', 'npcs.json')
 GENERATOR    = os.path.join(SCRIPT_DIR, 'dialog_to_c.py')
 OUT_C        = os.path.join(SCRIPT_DIR, '..', 'src', 'dialog_data.c')
+CONFIG_H     = os.path.join(SCRIPT_DIR, '..', 'src', 'config.h')
+HUBS_JSON    = os.path.join(SCRIPT_DIR, '..', 'assets', 'dialog', 'hubs.json')
+HUB_OUT_C    = os.path.join(SCRIPT_DIR, '..', 'src', 'hub_data.c')
+
+
+def read_max_npcs_from_config(config_path=CONFIG_H):
+    """Read MAX_NPCS value from src/config.h at runtime."""
+    try:
+        with open(config_path) as f:
+            text = f.read()
+        sys.path.insert(0, os.path.dirname(__file__))
+        import dialog_to_c as _conv
+        return _conv.parse_max_npcs(text)
+    except Exception:
+        return 6  # safe fallback
 
 
 # ── Data helpers ─────────────────────────────────────────────────────────────
@@ -123,6 +137,11 @@ class DialogEditor:
         self.npc_cur  = 0
         self.node_cur = 0
         self.status   = ""
+        self.max_npcs = read_max_npcs_from_config()
+        self.hubs_path = HUBS_JSON
+        self.hubs_data = self._load_hubs()
+        self.hub_view  = False   # True when hub view is active
+        self.hub_cur   = 0       # selected hub index in hub view
         curses.start_color()
         curses.use_default_colors()
         curses.init_pair(1, curses.COLOR_YELLOW, -1)
@@ -145,10 +164,16 @@ class DialogEditor:
         curses.curs_set(0)
         self.scr.keypad(True)
         while True:
-            self.draw()
-            key = self.scr.getch()
-            if not self.handle_key(key):
-                break
+            if self.hub_view:
+                self._draw_hub_view()
+                key = self.scr.getch()
+                if not self._handle_hub_key(key):
+                    break
+            else:
+                self.draw()
+                key = self.scr.getch()
+                if not self.handle_key(key):
+                    break
 
     def draw(self):
         self.scr.erase()
@@ -228,7 +253,7 @@ class DialogEditor:
             row += 1  # blank line between nodes
 
         # Status bar
-        status = self.status or ("[TAB]pane [j/k]move [e]dit [a]dd [d]el [n]ext [c]hoice [r]ename [s]ave [g]en [q]uit")
+        status = self.status or ("[TAB]pane [j/k]move [e]dit [a]dd [d]el [n]ext [c]hoice [r]ename [s]ave [g]en [h]hubs [q]uit")
         if h > 1:
             self.scr.addstr(h - 2, 0, "─" * (w - 1))
         if h > 0:
@@ -236,6 +261,105 @@ class DialogEditor:
 
         self.scr.refresh()
         self.status = ""
+
+    def _draw_hub_view(self):
+        self.scr.erase()
+        h, w = self.scr.getmaxyx()
+        hubs = self.hubs_data.get("hubs", [])
+
+        # Header
+        header = "=== HUB VIEW === [h]back [a]addNPC [r]removeNPC [n]newHub [q]quit"
+        self.scr.addstr(0, 0, header[:w - 1])
+
+        # Left: hub list
+        for i, hub in enumerate(hubs):
+            attr = curses.A_REVERSE if i == self.hub_cur else 0
+            line = f"[{hub['id']}] {hub['name'][:14]}"
+            if i + 1 < h - 2:
+                self.scr.addstr(i + 1, 0, line[:LEFT_W - 1].ljust(LEFT_W - 1), attr)
+
+        # Divider
+        for row in range(h - 2):
+            self.scr.addstr(row, LEFT_W - 1, "│")
+
+        # Right: roster of selected hub
+        if hubs and self.hub_cur < len(hubs):
+            hub = hubs[self.hub_cur]
+            npc_by_id = {npc["id"]: npc["name"] for npc in self.npcs}
+            self.scr.addstr(0, LEFT_W, f"Hub: {hub['name']}")
+            for i, npc_id in enumerate(hub.get("npc_ids", [])):
+                name = npc_by_id.get(npc_id, f"<unknown id={npc_id}>")
+                if i + 1 < h - 2:
+                    self.scr.addstr(i + 1, LEFT_W, f"  [{npc_id}] {name}")
+
+        # Status bar
+        status = self.status or ""
+        if h > 1:
+            self.scr.addstr(h - 2, 0, "─" * (w - 1))
+        if h > 0:
+            self.scr.addstr(h - 1, 0, status[:w - 1])
+        self.scr.refresh()
+        self.status = ""
+
+    def _handle_hub_key(self, key):
+        ch = chr(key) if 0 < key < 256 else None
+        hubs = self.hubs_data.get("hubs", [])
+        if ch in ('j', '\n') or key == curses.KEY_DOWN:
+            self.hub_cur = min(self.hub_cur + 1, len(hubs) - 1)
+        elif ch == 'k' or key == curses.KEY_UP:
+            self.hub_cur = max(self.hub_cur - 1, 0)
+        elif ch in ('H', 'h'):
+            self.hub_view = False
+        elif ch == 'a' and hubs:
+            # Add NPC to current hub
+            hub = hubs[self.hub_cur]
+            npc_by_id = {npc["id"]: npc["name"] for npc in self.npcs}
+            choices = ", ".join(f"{i}={npc_by_id[i]}" for i in sorted(npc_by_id))
+            raw = self._prompt(f"Add NPC id ({choices}):", "")
+            if raw:
+                try:
+                    npc_id = int(raw)
+                    if npc_id in npc_by_id and npc_id not in hub["npc_ids"]:
+                        hub["npc_ids"].append(npc_id)
+                        self._save_hubs()
+                        self.status = f"Added NPC {npc_id} to {hub['name']}"
+                    elif npc_id in hub["npc_ids"]:
+                        self.status = "NPC already in hub"
+                    else:
+                        self.status = f"NPC id {npc_id} does not exist"
+                except ValueError:
+                    self.status = "Invalid id"
+        elif ch == 'r' and hubs:
+            # Remove NPC from current hub
+            hub = hubs[self.hub_cur]
+            if not hub["npc_ids"]:
+                self.status = "Hub has no NPCs"
+            else:
+                roster = ", ".join(str(i) for i in hub["npc_ids"])
+                raw = self._prompt(f"Remove NPC id ({roster}):", "")
+                if raw:
+                    try:
+                        npc_id = int(raw)
+                        if npc_id in hub["npc_ids"]:
+                            hub["npc_ids"].remove(npc_id)
+                            self._save_hubs()
+                            self.status = f"Removed NPC {npc_id} from {hub['name']}"
+                        else:
+                            self.status = f"NPC {npc_id} not in hub"
+                    except ValueError:
+                        self.status = "Invalid id"
+        elif ch == 'n':
+            # Create new hub
+            name = self._prompt("New hub name:", "")
+            if name:
+                new_id = max((h["id"] for h in hubs), default=-1) + 1
+                hubs.append({"id": new_id, "name": name.upper()[:15], "npc_ids": []})
+                self._save_hubs()
+                self.hub_cur = len(hubs) - 1
+                self.status = f"Created hub '{name.upper()[:15]}'"
+        elif ch == 'q':
+            return self._quit()
+        return True
 
     def handle_key(self, key):
         ch = chr(key) if 0 < key < 256 else None
@@ -269,6 +393,9 @@ class DialogEditor:
             self._save()
         elif ch == 'g':
             self._generate()
+        elif ch in ('H', 'h'):
+            self.hub_view = not self.hub_view
+            self.hub_cur  = 0
         elif ch == 'q':
             return self._quit()
         return True
@@ -298,24 +425,87 @@ class DialogEditor:
 
     def _add(self):
         if self.focus == 'npc':
-            if len(self.npcs) >= MAX_NPCS:
-                self.status = f"ERROR: already at MAX_NPCS={MAX_NPCS}. Cannot add more NPCs."
-                return
+            n = len(self.npcs)
+            if n >= self.max_npcs:
+                wram_each = 2  # uint8_t current_node + uint8_t flags
+                new_max = self.max_npcs + 1
+                wram_total = new_max * wram_each
+                confirm = self._prompt(
+                    f"MAX_NPCS is {self.max_npcs} — increase to {new_max}? "
+                    f"WRAM: {new_max}×{wram_each}={wram_total}B. (y/N):", "N")
+                if confirm.lower() != 'y':
+                    return
+                # Patch config.h
+                try:
+                    with open(CONFIG_H) as f:
+                        cfg = f.read()
+                    import dialog_to_c as _conv
+                    new_cfg = _conv.patch_config_define(cfg, "MAX_NPCS", new_max)
+                    with open(CONFIG_H, 'w') as f:
+                        f.write(new_cfg)
+                    self.max_npcs = new_max
+                    self.status = f"MAX_NPCS updated to {new_max} in src/config.h"
+                except Exception as e:
+                    self.status = f"ERROR patching config.h: {e}"
+                    return
             name = self._prompt("New NPC name:")
             if not name:
                 return
-            new_id = max(n['id'] for n in self.npcs) + 1
-            self.npcs.append({
-                "id": new_id,
-                "name": name.upper()[:MAX_NPCS],
-                "nodes": [{"idx": 0, "text": "...", "choices": [], "next": ["END"]}]
-            })
+            new_id = max(npc['id'] for npc in self.npcs) + 1
+            stub = {"idx": 0, "text": "...", "choices": [], "next": ["END"]}
+            self.npcs.append({"id": new_id, "name": name.upper()[:15], "nodes": [stub]})
+            self.dirty = True
+            # Offer to assign to a hub immediately (R9)
+            self._offer_hub_assignment(new_id, name.upper()[:15])
+            return
         else:
             nodes  = self.cur_nodes
             new_idx = len(nodes)
             nodes.append({"idx": new_idx, "text": "...", "choices": [], "next": ["END"]})
             self.node_cur = new_idx
         self.dirty = True
+
+    def _load_hubs(self):
+        if os.path.exists(self.hubs_path):
+            with open(self.hubs_path) as f:
+                return json.load(f)
+        return {"hubs": []}
+
+    def _save_hubs(self):
+        with open(self.hubs_path, 'w') as f:
+            json.dump(self.hubs_data, f, indent=2)
+            f.write('\n')
+
+    def _offer_hub_assignment(self, npc_id, npc_name):
+        """Offer to assign newly created NPC to an existing hub (R9)."""
+        if not os.path.exists(HUBS_JSON):
+            return
+        try:
+            with open(HUBS_JSON) as f:
+                hubs_data = json.load(f)
+        except Exception:
+            return
+        hubs = hubs_data.get("hubs", [])
+        if not hubs:
+            return
+        hub_list = ", ".join(f"[{h['id']}]{h['name']}" for h in hubs)
+        ans = self._prompt(f"Assign '{npc_name}' to hub? {hub_list} (id or Enter to skip):", "")
+        if not ans:
+            return
+        try:
+            hub_id = int(ans)
+        except ValueError:
+            return
+        for h in hubs:
+            if h["id"] == hub_id:
+                if npc_id not in h["npc_ids"]:
+                    h["npc_ids"].append(npc_id)
+                with open(HUBS_JSON, 'w') as f:
+                    json.dump(hubs_data, f, indent=2)
+                    f.write('\n')
+                self.status = f"NPC {npc_id} added to hub '{h['name']}'"
+                return
+        self.status = f"Hub id {hub_id} not found"
 
     def _delete(self):
         if self.focus == 'node':
@@ -328,7 +518,12 @@ class DialogEditor:
             for i, n in enumerate(nodes):
                 n['idx'] = i
             renumber_refs(nodes, di)
-            self.node_cur = min(self.node_cur, len(nodes) - 1)
+            if not nodes:
+                # R5: preserve NPC slot as a 1-node stub — never fully empty
+                nodes.append({"idx": 0, "text": "...", "choices": [], "next": ["END"]})
+                self.node_cur = 0
+            else:
+                self.node_cur = min(self.node_cur, len(nodes) - 1)
             self.dirty = True
 
     def _set_next(self):
@@ -407,14 +602,17 @@ class DialogEditor:
         self._save()
         if self.dirty:  # save was blocked
             return
-        result = subprocess.run(
-            [sys.executable, GENERATOR, self.path, OUT_C],
-            capture_output=True, text=True
-        )
+        cmd = [
+            sys.executable, GENERATOR, self.path, OUT_C,
+            "--hubs-json", self.hubs_path,
+            "--hub-out",   HUB_OUT_C,
+            "--config-h",  CONFIG_H,
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode == 0:
-            self.status = f"Generated {OUT_C}"
+            self.status = f"Generated {OUT_C} + {HUB_OUT_C}"
         else:
-            self.status = f"ERROR: {result.stderr[:60]}"
+            self.status = f"ERROR: {result.stderr[:80]}"
 
     def _quit(self):
         if self.dirty:
