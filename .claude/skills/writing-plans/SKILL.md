@@ -67,8 +67,6 @@ After drafting all tasks in a batch, before inserting the Smoketest Checkpoint b
 4. Go back and fill in `**Depends on:**` and `**Parallelizable with:**` on each task
 5. Insert a `#### Parallel Execution Groups` table immediately before the Smoketest Checkpoint block (use the template below)
 
-Use this template for every checkpoint:
-
 Use this template for the parallel group table that precedes every checkpoint:
 
 ```markdown
@@ -142,8 +140,8 @@ Use this template for any task that creates or modifies `src/*.c` or `src/*.h`:
 - Create: `src/foo.c`, `src/foo.h`
 - Test: `tests/test_foo.c`
 
-**Depends on:** none   ← or "Task N, Task M" — tasks whose output this task reads or requires
-**Parallelizable with:** none   ← or "Task N, Task M" — tasks at the same dependency layer
+**Depends on:** none   ← or "Task N, Task M" — tasks whose output this task reads or requires (use task numbers matching plan headings)
+**Parallelizable with:** none   ← or "Task N, Task M" — tasks at the same dependency layer (use task numbers matching plan headings)
 
 > **Entity system?** Use SoA (Structure-of-Arrays). Capacity constants in `src/config.h`.
 > Never AoS — SDCC cannot eliminate stride multiplication on SM83.
@@ -224,8 +222,8 @@ Use this template for tasks that do NOT involve `src/*.c` or `src/*.h`:
 **Files:**
 - Create/Modify: `path/to/file.md`
 
-**Depends on:** none   ← or "Task N, Task M"
-**Parallelizable with:** none   ← or "Task N, Task M"
+**Depends on:** none   ← or "Task N, Task M" — tasks whose output this task reads or requires (use task numbers matching plan headings)
+**Parallelizable with:** none   ← or "Task N, Task M" — tasks at the same dependency layer (use task numbers matching plan headings)
 
 **Step 1: Write the content**
 
