@@ -267,7 +267,8 @@
       "Bash(for skill:*)",
       "Bash(aseprite:*)",
       "Bash(PYTHONPATH=. python3 -m unittest tests.test_dialog_to_c.TestConfigHelpers -v)",
-      "Bash(PYTHONPATH=. python3 -m unittest tests.test_dialog_to_c.TestGenerateHubC -v)"
+      "Bash(PYTHONPATH=. python3 -m unittest tests.test_dialog_to_c.TestGenerateHubC -v)",
+      "Bash(PYTHONPATH=. python3 -m unittest tests.test_tmx_to_c -v)"
     ]
   }
 }
