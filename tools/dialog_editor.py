@@ -253,7 +253,7 @@ class DialogEditor:
             row += 1  # blank line between nodes
 
         # Status bar
-        status = self.status or ("[TAB]pane [j/k]move [e]dit [a]dd [d]el [n]ext [c]hoice [r]ename [s]ave [g]en [H]hubs [q]uit")
+        status = self.status or ("[TAB]pane [j/k]move [e]dit [a]dd [d]el [n]ext [c]hoice [r]ename [s]ave [g]en [h]hubs [q]uit")
         if h > 1:
             self.scr.addstr(h - 2, 0, "─" * (w - 1))
         if h > 0:
@@ -268,7 +268,8 @@ class DialogEditor:
         hubs = self.hubs_data.get("hubs", [])
 
         # Header
-        self.scr.addstr(0, 0, "=== HUB VIEW === [H]back [a]addNPC [r]removeNPC [n]newHub [q]quit")
+        header = "=== HUB VIEW === [h]back [a]addNPC [r]removeNPC [n]newHub [q]quit"
+        self.scr.addstr(0, 0, header[:w - 1])
 
         # Left: hub list
         for i, hub in enumerate(hubs):
@@ -307,7 +308,7 @@ class DialogEditor:
             self.hub_cur = min(self.hub_cur + 1, len(hubs) - 1)
         elif ch == 'k' or key == curses.KEY_UP:
             self.hub_cur = max(self.hub_cur - 1, 0)
-        elif ch == 'H':
+        elif ch in ('H', 'h'):
             self.hub_view = False
         elif ch == 'a' and hubs:
             # Add NPC to current hub
@@ -392,7 +393,7 @@ class DialogEditor:
             self._save()
         elif ch == 'g':
             self._generate()
-        elif ch == 'H':
+        elif ch in ('H', 'h'):
             self.hub_view = not self.hub_view
             self.hub_cur  = 0
         elif ch == 'q':
