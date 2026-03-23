@@ -313,24 +313,76 @@ class DialogEditor:
 
     def _add(self):
         if self.focus == 'npc':
-            if len(self.npcs) >= self.max_npcs:
-                self.status = f"ERROR: already at MAX_NPCS={self.max_npcs}. Cannot add more NPCs."
-                return
+            n = len(self.npcs)
+            if n >= self.max_npcs:
+                wram_each = 2  # uint8_t current_node + uint8_t flags
+                new_max = self.max_npcs + 1
+                wram_total = new_max * wram_each
+                confirm = self._prompt(
+                    f"MAX_NPCS is {self.max_npcs} — increase to {new_max}? "
+                    f"WRAM: {new_max}×{wram_each}={wram_total}B. (y/N):", "N")
+                if confirm.lower() != 'y':
+                    return
+                # Patch config.h
+                try:
+                    with open(CONFIG_H) as f:
+                        cfg = f.read()
+                    import dialog_to_c as _conv
+                    new_cfg = _conv.patch_config_define(cfg, "MAX_NPCS", new_max)
+                    with open(CONFIG_H, 'w') as f:
+                        f.write(new_cfg)
+                    self.max_npcs = new_max
+                    self.status = f"MAX_NPCS updated to {new_max} in src/config.h"
+                except Exception as e:
+                    self.status = f"ERROR patching config.h: {e}"
+                    return
             name = self._prompt("New NPC name:")
             if not name:
                 return
-            new_id = max(n['id'] for n in self.npcs) + 1
-            self.npcs.append({
-                "id": new_id,
-                "name": name.upper()[:15],
-                "nodes": [{"idx": 0, "text": "...", "choices": [], "next": ["END"]}]
-            })
+            new_id = max(npc['id'] for npc in self.npcs) + 1
+            stub = {"idx": 0, "text": "...", "choices": [], "next": ["END"]}
+            self.npcs.append({"id": new_id, "name": name.upper()[:15], "nodes": [stub]})
+            self.dirty = True
+            # Offer to assign to a hub immediately (R9)
+            self._offer_hub_assignment(new_id, name.upper()[:15])
+            return
         else:
             nodes  = self.cur_nodes
             new_idx = len(nodes)
             nodes.append({"idx": new_idx, "text": "...", "choices": [], "next": ["END"]})
             self.node_cur = new_idx
         self.dirty = True
+
+    def _offer_hub_assignment(self, npc_id, npc_name):
+        """Offer to assign newly created NPC to an existing hub (R9)."""
+        if not os.path.exists(HUBS_JSON):
+            return
+        try:
+            with open(HUBS_JSON) as f:
+                hubs_data = json.load(f)
+        except Exception:
+            return
+        hubs = hubs_data.get("hubs", [])
+        if not hubs:
+            return
+        hub_list = ", ".join(f"[{h['id']}]{h['name']}" for h in hubs)
+        ans = self._prompt(f"Assign '{npc_name}' to hub? {hub_list} (id or Enter to skip):", "")
+        if not ans:
+            return
+        try:
+            hub_id = int(ans)
+        except ValueError:
+            return
+        for h in hubs:
+            if h["id"] == hub_id:
+                if npc_id not in h["npc_ids"]:
+                    h["npc_ids"].append(npc_id)
+                with open(HUBS_JSON, 'w') as f:
+                    json.dump(hubs_data, f, indent=2)
+                    f.write('\n')
+                self.status = f"NPC {npc_id} added to hub '{h['name']}'"
+                return
+        self.status = f"Hub id {hub_id} not found"
 
     def _delete(self):
         if self.focus == 'node':
@@ -343,7 +395,12 @@ class DialogEditor:
             for i, n in enumerate(nodes):
                 n['idx'] = i
             renumber_refs(nodes, di)
-            self.node_cur = min(self.node_cur, len(nodes) - 1)
+            if not nodes:
+                # R5: preserve NPC slot as a 1-node stub — never fully empty
+                nodes.append({"idx": 0, "text": "...", "choices": [], "next": ["END"]})
+                self.node_cur = 0
+            else:
+                self.node_cur = min(self.node_cur, len(nodes) - 1)
             self.dirty = True
 
     def _set_next(self):
