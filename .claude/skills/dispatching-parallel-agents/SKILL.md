@@ -15,7 +15,7 @@ description: Single source of truth for when and how to offload work to agents a
 | Open-ended search (keyword, pattern, "find where X is used") | Unpredictable result volume |
 | Code review (spec compliance, code quality) | Needs isolated judgment, not orchestrator state |
 | Asset pipeline runs (png_to_tiles, tmx_to_c) | Long output, no orchestrator value |
-| Any Explore agent task | That's what the Explore agent is for |
+| Any Explore agent task | Open-ended multi-file investigation tasks (the Explore agent subagent_type handles these) |
 
 **Rule:** If you are about to call Read, Glob, or Grep more than twice in a row to explore unfamiliar territory, STOP — dispatch an Explore agent instead.
 
@@ -31,7 +31,7 @@ Multiple Agent calls in one message run concurrently. Parallelize when ALL of th
 |---------|---------|
 | Multiple file audits | Review `player.c` and `enemy.c` simultaneously |
 | Spec + quality reviewers | Fire both review agents in one message after implementer commits |
-| Independent implementers (parallelizable-flagged tasks) | Tasks A and B each write a different file, no shared state |
+| Independent implementers (tasks the plan has explicitly marked as safe to parallelize) | Tasks A and B each write a different file, no shared state |
 | Skill/agent doc updates | Updating `sprite-expert` and `map-expert` in the same message |
 | Read-only exploration | Dispatching two Explore agents on different subsystems |
 
@@ -64,7 +64,7 @@ When a plan flags tasks as parallelizable (different output files, no shared sta
 1. Orchestrator dispatches 2–3 implementer agents in a single message
 2. Each implementer works in isolation (different files)
 3. Orchestrator waits for ALL in the batch to commit
-4. Orchestrator then dispatches spec + quality reviewers in a single parallel message (one reviewer pair per implementer, or one shared reviewer for the whole batch if tasks are small)
+4. Orchestrator then dispatches spec + quality reviewers in a single parallel message (one reviewer pair per implementer, or one shared reviewer pair for the whole batch if each task touches a single file)
 5. Any failures → targeted fix → re-review
 
 **Batch size limit:** Max 3 concurrent implementers. More than 3 creates coordination overhead that exceeds the parallelism benefit.
