@@ -102,14 +102,18 @@ After all tasks complete and verified, run the smoketest sequence:
    - **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
    - Follow that skill to verify tests, present options, execute choice.
 
-### Step 8: Lessons Learned
+### Step 8: Lessons Learned — HARD GATE (do not skip)
 
-After the smoketest passes (before pushing/PR), ask:
+After the smoketest passes, **before pushing or creating the PR**, explicitly ask:
 
 > "Any important lessons learned from this implementation? (e.g. surprises, sharp edges, things that should update CLAUDE.md / skills / agents / memory)"
 
-- If **yes** or the user provides lessons: invoke the `/prd` skill to create a GitHub issue capturing the needed documentation updates.
-- If **no** or lessons are trivial: skip the PRD and proceed normally.
+**This step is mandatory — do not skip it, even if the implementation felt smooth.**
+
+- If **yes** or the user provides lessons: invoke the `/prd` skill to create a GitHub issue capturing the needed documentation updates. Save anything session-relevant to memory as well.
+- If the user explicitly says **no lessons**: note that in your response and proceed to push/PR.
+
+Do not push or open the PR until you have received an explicit answer to this question.
 
 ## When to Stop and Ask for Help
 

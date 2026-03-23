@@ -42,6 +42,10 @@ static inline uint8_t joypad(void) { return 0; }
 #define SPRITES_8x8  ((void)0)
 #define SHOW_SPRITES ((void)0)
 
+/* Sprite prop flags */
+#define S_FLIPX 0x20U
+#define S_FLIPY 0x40U
+
 /* Sprite functions */
 static inline void set_sprite_data(uint8_t first_tile, uint8_t nb_tiles,
                                     const uint8_t *data) {
@@ -49,6 +53,9 @@ static inline void set_sprite_data(uint8_t first_tile, uint8_t nb_tiles,
 }
 static inline void set_sprite_tile(uint8_t nb, uint8_t tile) {
     (void)nb; (void)tile;
+}
+static inline void set_sprite_prop(uint8_t nb, uint8_t prop) {
+    (void)nb; (void)prop;
 }
 /* Tracked by mock_sprites.c */
 extern uint8_t mock_move_sprite_last_nb;

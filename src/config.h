@@ -8,9 +8,12 @@
 /* OAM budget: player=2 (top+bottom half), slot 2=dialog_arrow HUD, remaining=13 for enemies/projectiles */
 #define MAX_SPRITES  16
 
-/* Sprite VRAM tile slots */
-#define PLAYER_TILE_BASE       0u  /* tiles 0-1: player car (2 tiles) */
-#define DIALOG_ARROW_TILE_BASE 2u  /* tile  2:   dialog overflow arrow (1 tile) */
+/* Sprite VRAM tile slots — player car occupies tiles 0-7 (4 direction sets × 2 tiles) */
+#define PLAYER_TILE_T          0u  /* tiles 0-1: T  / B facing (top+bot) */
+#define PLAYER_TILE_RT         2u  /* tiles 2-3: RT / LT facing (top+bot, LT uses FLIPX) */
+#define PLAYER_TILE_R          4u  /* tiles 4-5: R  / L  facing (top+bot, L  uses FLIPX) */
+#define PLAYER_TILE_RB         6u  /* tiles 6-7: RB / LB facing (top+bot, LB uses FLIPX) */
+#define DIALOG_ARROW_TILE_BASE 8u  /* tile  8:   dialog overflow arrow (moved from 2) */
 
 /* OAM slot assignments (fixed HUD sprites) */
 #define DIALOG_ARROW_OAM_SLOT  2u  /* OAM slot 2 — hub dialog overflow indicator */
