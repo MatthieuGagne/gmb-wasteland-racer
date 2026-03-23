@@ -108,8 +108,8 @@ def _pad3(val, width=11):
     return val.ljust(width)
 
 
-def generate_c(data):
-    validate(data)
+def generate_c(data, max_npcs=None):
+    validate(data, max_npcs=max_npcs)
     lines = []
     lines.append("// GENERATED — do not edit by hand.")
     lines.append("// Source: assets/dialog/npcs.json")
@@ -269,16 +269,58 @@ def generate_hub_c(hubs_data, npcs_data):
 
 
 def main():
-    if len(sys.argv) != 3:
-        print(f"Usage: {sys.argv[0]} <npcs.json> <dialog_data.c>", file=sys.stderr)
-        sys.exit(1)
-    json_path, out_path = sys.argv[1], sys.argv[2]
-    with open(json_path) as f:
-        data = json.load(f)
-    out = generate_c(data)
-    with open(out_path, "w") as f:
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Generate C dialog data from JSON sources.")
+    parser.add_argument("npcs_json",  help="Path to assets/dialog/npcs.json")
+    parser.add_argument("dialog_out", help="Output path for src/dialog_data.c")
+    parser.add_argument("--hubs-json",  default=None,
+                        help="Path to assets/dialog/hubs.json (enables hub_data.c generation)")
+    parser.add_argument("--hub-out",    default=None,
+                        help="Output path for src/hub_data.c")
+    parser.add_argument("--config-h",   default=None,
+                        help="Path to src/config.h (enables MAX_NPCS exact-count validation "
+                             "and MAX_HUB_NPCS patching)")
+    parser.add_argument("--max-npcs",   type=int, default=None,
+                        help="Override MAX_NPCS (instead of reading from config.h)")
+    args = parser.parse_args()
+
+    with open(args.npcs_json) as f:
+        npcs_data = json.load(f)
+
+    # Determine effective max_npcs
+    max_npcs = args.max_npcs
+    config_text = None
+    if max_npcs is None and args.config_h:
+        with open(args.config_h) as f:
+            config_text = f.read()
+        max_npcs = parse_max_npcs(config_text)
+
+    # Generate dialog_data.c
+    out = generate_c(npcs_data, max_npcs=max_npcs)
+    with open(args.dialog_out, "w") as f:
         f.write(out)
-    print(f"Written: {out_path}")
+    print(f"Written: {args.dialog_out}")
+
+    # Generate hub_data.c (if requested)
+    if args.hubs_json and args.hub_out:
+        with open(args.hubs_json) as f:
+            hubs_data = json.load(f)
+        hub_out = generate_hub_c(hubs_data, npcs_data)
+        with open(args.hub_out, "w") as f:
+            f.write(hub_out)
+        print(f"Written: {args.hub_out}")
+
+        # Patch MAX_HUB_NPCS in config.h if needed
+        if args.config_h and config_text is not None:
+            needed = compute_max_hub_npcs(hubs_data)
+            m = re.search(r'#define\s+MAX_HUB_NPCS\s+(\d+)', config_text)
+            current = int(m.group(1)) if m else 0
+            if needed != current:
+                new_text = patch_config_define(config_text, "MAX_HUB_NPCS", f"{needed}u")
+                with open(args.config_h, "w") as f:
+                    f.write(new_text)
+                print(f"Patched MAX_HUB_NPCS={needed}u in {args.config_h}")
 
 
 if __name__ == "__main__":
