@@ -94,7 +94,7 @@ void player_update(void) BANKED {
 
     /* Apply Y velocity — zero on wall/edge collision */
     new_py = (int16_t)(py + (int16_t)vy);
-    if (new_py >= (int16_t)cam_y && new_py <= (int16_t)(cam_y + (HUD_SCANLINE - 16u)) && corners_passable(px, new_py)) {
+    if (new_py >= 0 && new_py <= (int16_t)(MAP_PX_H - 8u) && corners_passable(px, new_py)) {
         py = new_py;
     } else {
         vy = 0;
