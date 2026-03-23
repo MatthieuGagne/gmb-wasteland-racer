@@ -128,7 +128,7 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 
 **Outer loop:** brainstorming → PRD (`/prd`) → [separate session] writing-plans → subagent-driven-development
 
-**GitHub issue links:** When the user pastes a GitHub issue URL (e.g. `https://github.com/.../issues/N`), immediately invoke the `writing-plans` skill — do not ask for confirmation.
+**GitHub issue links:** When the user pastes a GitHub issue URL (e.g. `https://github.com/.../issues/N`), first fetch the issue and check its **Files Impacted** or **Out of Scope** sections. If ALL touched files qualify as doc-only (`.md`, `.txt`, `.json` except `bank-manifest.json`, files under `.claude/skills/` or `.claude/agents/`), invoke the `doc-review` skill. Otherwise invoke `writing-plans`. Do not ask for confirmation.
 **TDD red/green command:** `make test` (gcc + Unity, no hardware needed — use `/test` skill). **Early-exit behavior:** the Makefile uses `|| exit 1` — it stops at the first failing test binary (alphabetical order). Test binaries after the first failure do NOT run. Fix all failures starting from the earliest binary; re-run `make test` after each fix to reveal the next hidden failure.
 **Bank manifest maintenance:** Every new `src/*.c` file must have an entry in `bank-manifest.json` before it is written. `bank-pre-write` skill and `bank_check.py` (Makefile dependency) both enforce this. Every banking-related PR must update ALL artifacts: `bank-manifest.json`, both bank skills, `bank_check.py`, `gbdk-expert`, `gb-memory-validator`, and this file.
 **Build verification:** `GBDK_HOME=/home/mathdaman/gbdk make` (use `/build` skill)
@@ -153,6 +153,8 @@ This project uses [Superpowers](https://github.com/obra/superpowers) (installed 
 **Parallel agents policy:** ALWAYS use parallel agents (multiple concurrent Agent tool calls in a single message) when tasks are independent and non-conflicting. Examples of safe parallelism: implementing separate files, running reviews on different files, dispatching spec + quality reviewers simultaneously. Do NOT parallelize when tasks write the same file, depend on each other's output, or share git state (e.g., multiple implementers committing to the same branch simultaneously).
 Examples of safe parallelism: multiple file audits; implementing loaders for independent systems (different output files); skill/agent doc updates (different files); read-only exploration.
 Not safe to parallelize: writing the same file; multiple actors committing to the same branch; tasks with sequential data dependencies.
+
+**Explore agent mandate:** For ANY codebase exploration involving more than 2 files or any open-ended search (e.g. "find where X is used", "what calls Y", "search for pattern Z"), use the Explore agent — do NOT accumulate inline Read/Glob/Grep calls. Inline file reads are reserved for targeted lookups of known file paths. See `dispatching-parallel-agents` skill for the full offload and parallelize reference.
 
 **Branch policy:** NEVER commit directly to `master`. All work goes on a feature branch and merges via PR.
 
