@@ -42,7 +42,6 @@ import subprocess
 import sys
 import textwrap
 
-MAX_NPCS     = 6
 MAX_TEXT_LEN = 63
 MAX_CHOICES  = 3
 WARN_LEN     = 54   # yellow warning threshold
@@ -54,6 +53,21 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_JSON = os.path.join(SCRIPT_DIR, '..', 'assets', 'dialog', 'npcs.json')
 GENERATOR    = os.path.join(SCRIPT_DIR, 'dialog_to_c.py')
 OUT_C        = os.path.join(SCRIPT_DIR, '..', 'src', 'dialog_data.c')
+CONFIG_H     = os.path.join(SCRIPT_DIR, '..', 'src', 'config.h')
+HUBS_JSON    = os.path.join(SCRIPT_DIR, '..', 'assets', 'dialog', 'hubs.json')
+HUB_OUT_C    = os.path.join(SCRIPT_DIR, '..', 'src', 'hub_data.c')
+
+
+def read_max_npcs_from_config(config_path=CONFIG_H):
+    """Read MAX_NPCS value from src/config.h at runtime."""
+    try:
+        with open(config_path) as f:
+            text = f.read()
+        sys.path.insert(0, os.path.dirname(__file__))
+        import dialog_to_c as _conv
+        return _conv.parse_max_npcs(text)
+    except Exception:
+        return 6  # safe fallback
 
 
 # ── Data helpers ─────────────────────────────────────────────────────────────
@@ -123,6 +137,7 @@ class DialogEditor:
         self.npc_cur  = 0
         self.node_cur = 0
         self.status   = ""
+        self.max_npcs = read_max_npcs_from_config()
         curses.start_color()
         curses.use_default_colors()
         curses.init_pair(1, curses.COLOR_YELLOW, -1)
@@ -298,8 +313,8 @@ class DialogEditor:
 
     def _add(self):
         if self.focus == 'npc':
-            if len(self.npcs) >= MAX_NPCS:
-                self.status = f"ERROR: already at MAX_NPCS={MAX_NPCS}. Cannot add more NPCs."
+            if len(self.npcs) >= self.max_npcs:
+                self.status = f"ERROR: already at MAX_NPCS={self.max_npcs}. Cannot add more NPCs."
                 return
             name = self._prompt("New NPC name:")
             if not name:
@@ -307,7 +322,7 @@ class DialogEditor:
             new_id = max(n['id'] for n in self.npcs) + 1
             self.npcs.append({
                 "id": new_id,
-                "name": name.upper()[:MAX_NPCS],
+                "name": name.upper()[:15],
                 "nodes": [{"idx": 0, "text": "...", "choices": [], "next": ["END"]}]
             })
         else:
