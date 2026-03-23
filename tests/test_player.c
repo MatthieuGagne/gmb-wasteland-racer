@@ -85,24 +85,24 @@ void test_player_clamped_at_screen_right(void) {
     TEST_ASSERT_EQUAL_INT16(159, player_get_x());
 }
 
-/* --- screen Y clamp [cam_y, cam_y+143] ---------------------------------- */
+/* --- map Y clamp [0, MAP_PX_H-8] ---------------------------------------- */
 
-/* cam_y=648. Player at py=648 (top of screen). Track at (80,647) IS passable
- * (col 10, row 80 = road), so ONLY screen clamp prevents upward movement. */
-void test_player_clamped_at_screen_top(void) {
-    player_set_pos(80, 648);  /* py == cam_y: at top of viewport */
+/* Map-bounds clamp: player can now move below cam_y; track at (80,647) IS
+ * passable (col 10, row 80 = road), so player moves freely to 647. */
+void test_player_moves_below_old_screen_top(void) {
+    player_set_pos(80, 648);  /* py == old cam_y: was blocked by screen clamp */
     input = J_UP | J_A;
-    player_update();          /* new_py=647 < cam_y=648 -> blocked */
-    TEST_ASSERT_EQUAL_INT16(648, player_get_y());
+    player_update();          /* new_py=647 >= 0, passable -> allowed */
+    TEST_ASSERT_EQUAL_INT16(647, player_get_y());
 }
 
-/* cam_y=648, cam_y+143=791. Track at (80,792) IS passable (col 10, row 99 = road),
- * so ONLY screen clamp prevents downward movement past screen bottom. */
-void test_player_clamped_at_screen_bottom(void) {
-    player_set_pos(80, 791);  /* py beyond HUD clamp (cam_y+112=760) */
-    input = J_UP;             /* gas north: new_py=790, still > 760 -> blocked */
+/* Map-bounds clamp: player can move above old HUD cutoff; track at (80,790)
+ * IS passable (col 10, row 98 = road), so player moves freely to 790. */
+void test_player_moves_above_old_screen_bottom(void) {
+    player_set_pos(80, 791);
+    input = J_UP;             /* gas north: new_py=790, within map bounds -> allowed */
     player_update();
-    TEST_ASSERT_EQUAL_INT16(791, player_get_y());
+    TEST_ASSERT_EQUAL_INT16(790, player_get_y());
 }
 
 /* --- sprite slot count -------------------------------------------------- */
@@ -213,9 +213,9 @@ void test_render_at_low_hp_visible_on_non_flicker_frame(void) {
 void test_heal_call_restores_hp(void) {
     uint8_t i;
     damage_init();
-    damage_apply(3u);                              /* hp = PLAYER_MAX_HP - 3 */
+    damage_apply(21u);                             /* hp = PLAYER_MAX_HP - 21 = 79 */
     for (i = 0u; i < DAMAGE_INVINCIBILITY_FRAMES; i++) damage_tick();
-    damage_heal(DAMAGE_REPAIR_AMOUNT);             /* hp += 2 */
+    damage_heal(DAMAGE_REPAIR_AMOUNT);             /* hp += 20 → 99 */
     TEST_ASSERT_EQUAL_UINT8(PLAYER_MAX_HP - 1u, damage_get_hp());
 }
 
@@ -354,8 +354,8 @@ int main(void) {
     RUN_TEST(test_player_blocked_by_right_wall);
     RUN_TEST(test_player_clamped_at_screen_left);
     RUN_TEST(test_player_clamped_at_screen_right);
-    RUN_TEST(test_player_clamped_at_screen_top);
-    RUN_TEST(test_player_clamped_at_screen_bottom);
+    RUN_TEST(test_player_moves_below_old_screen_top);
+    RUN_TEST(test_player_moves_above_old_screen_bottom);
     RUN_TEST(test_player_init_claims_two_sprite_slots);
     RUN_TEST(test_player_render_calls_move_sprite_twice);
     RUN_TEST(test_player_render_both_halves_aligned);

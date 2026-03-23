@@ -67,10 +67,9 @@ void test_wall_zeros_vx_not_vy(void) {
 
 /* --- AC5: wall collision zeros vy, not vx ------------------------------- */
 
-/* Player at py=cam_y (648): screen top acts as wall.
- * Moving up (gas): new_py < cam_y → blocked → vy=0. */
+/* Player at py=0 (map top): moving up → new_py=-1 < 0 → map clamp blocks → vy=0. */
 void test_wall_zeros_vy_not_vx(void) {
-    player_set_pos(88, 648);  /* py == cam_y: at screen top */
+    player_set_pos(88, 0);   /* py at map top boundary */
     input = J_UP | J_A;
     player_update();
     TEST_ASSERT_EQUAL_INT8(0, player_get_vy());
@@ -90,15 +89,13 @@ void test_x_and_y_axes_accumulate_independently(void) {
     TEST_ASSERT_EQUAL_INT8(-PLAYER_MAX_SPEED, player_get_vy());
 }
 
-/* Player cannot move into the HUD band (bottom 16px reserved for Window layer).
- * cam_y=0, player at screen Y 112 (world py=112): bottom of 16px car = pixel 127.
- * Moving down one more pixel (py=113, screen Y 113, bottom=128) must be blocked. */
-void test_y_clamped_above_hud(void) {
-    camera_init(88, 0);       /* cam_y = 0 */
-    player_set_pos(88, 112);  /* screen Y = 112, car bottom = 127 — just inside play area */
+/* Player cannot move past map bottom boundary (MAP_PX_H-8 = 792).
+ * Player at py=792: moving down → new_py=793 > 792 → map clamp blocks. */
+void test_y_clamped_at_map_bottom(void) {
+    player_set_pos(88, 792);  /* py at map bottom boundary */
     input = J_DOWN;
-    player_update();           /* reverse from stopped pushes py to 113 > HUD boundary (112) — blocked */
-    TEST_ASSERT_TRUE(player_get_y() <= 112);  /* must not cross into HUD */
+    player_update();           /* new_py=793 > MAP_PX_H-8=792 → blocked */
+    TEST_ASSERT_TRUE(player_get_y() <= 792);
 }
 
 int main(void) {
@@ -109,6 +106,6 @@ int main(void) {
     RUN_TEST(test_wall_zeros_vx_not_vy);
     RUN_TEST(test_wall_zeros_vy_not_vx);
     RUN_TEST(test_x_and_y_axes_accumulate_independently);
-    RUN_TEST(test_y_clamped_above_hud);
+    RUN_TEST(test_y_clamped_at_map_bottom);
     return UNITY_END();
 }

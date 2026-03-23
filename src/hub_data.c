@@ -18,5 +18,15 @@ static const HubDef hub0 = {
     { 0u, 1u, 2u }
 };
 
-const HubDef * const hub_table[] = { &hub0 };
-const uint8_t         hub_table_count = 1u;
+/* --- Hub 1: JANKY CITY --- */
+static const char hub1_name[] = "JANKY CITY";
+
+static const HubDef hub1 = {
+    hub1_name,
+    0u,
+    {  },
+    {  }
+};
+
+const HubDef * const hub_table[] = { &hub0, &hub1 };
+const uint8_t         hub_table_count = 2u;

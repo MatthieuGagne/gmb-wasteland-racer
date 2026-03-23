@@ -30,8 +30,8 @@
 #define PLAYER_FUEL      20  /* Fuel depletion system (not yet implemented) */
 
 /* Damage system */
-#define PLAYER_MAX_HP              8u   /* max HP pool; 0 = dead */
-#define DAMAGE_REPAIR_AMOUNT       2u   /* HP restored by TILE_REPAIR */
+#define PLAYER_MAX_HP              100u  /* max HP pool; 0 = dead */
+#define DAMAGE_REPAIR_AMOUNT       20u   /* HP restored by TILE_REPAIR */
 #define DAMAGE_INVINCIBILITY_FRAMES 30u /* frames of i-frames after a hit */
 
 #define MAP_TILES_W  20u
