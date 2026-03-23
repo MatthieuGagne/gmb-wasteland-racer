@@ -155,6 +155,8 @@ static player_dir_t decode_dir(uint8_t buttons) {
 }
 
 player_dir_t player_get_dir(void) BANKED { return player_dir; }
+int8_t player_dir_dx(player_dir_t dir) BANKED { return DIR_DX[dir]; }
+int8_t player_dir_dy(player_dir_t dir) BANKED { return DIR_DY[dir]; }
 
 void player_apply_physics(uint8_t buttons, TileType terrain) BANKED {
     uint8_t i;
