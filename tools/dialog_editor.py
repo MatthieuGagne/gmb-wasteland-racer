@@ -487,6 +487,65 @@ class DialogEditor:
         self.hub_roster_cur = 0
         return True
 
+    def _hub_picker(self, hubs):
+        """Interactive NPC picker: shows only NPCs not already in this hub.
+        j/k to move, Enter to add, Esc to cancel.
+        """
+        hub        = hubs[self.hub_cur]
+        candidates = unassigned_npcs(self.npcs, hub["npc_ids"])
+        if not candidates:
+            self.status = "All NPCs already in this hub"
+            return True
+
+        pick_cur = 0
+        while True:
+            # Draw picker overlay on top of current hub view
+            self._draw_hub_view()
+            h, w = self.scr.getmaxyx()
+            header = "Add NPC — j/k move, Enter select, Esc cancel"
+            self.scr.addstr(0, LEFT_W, header[:w - LEFT_W - 1], curses.A_BOLD)
+            for i, npc in enumerate(candidates):
+                attr = curses.A_REVERSE if i == pick_cur else 0
+                line = f"  [{npc['id']}] {npc['name'][:16]}"
+                if i + 1 < h - 2:
+                    self.scr.addstr(i + 1, LEFT_W, line[:w - LEFT_W - 1], attr)
+            self.scr.refresh()
+
+            key = self.scr.getch()
+            ch  = chr(key) if 0 < key < 256 else None
+
+            if ch == 'j' or key == curses.KEY_DOWN:
+                pick_cur = min(pick_cur + 1, len(candidates) - 1)
+            elif ch == 'k' or key == curses.KEY_UP:
+                pick_cur = max(pick_cur - 1, 0)
+            elif key in (10, 13, curses.KEY_ENTER):  # Enter
+                npc_id = candidates[pick_cur]["id"]
+                self.hubs_data["hubs"], self.status = hub_add_npc(hubs, self.hub_cur, npc_id)
+                self._save_hubs()
+                break
+            elif key == 27 or ch == 'b':  # Esc or b = cancel
+                self.status = "Cancelled"
+                break
+
+        return True
+
+    def _hub_remove_action(self, hubs):
+        hub    = hubs[self.hub_cur]
+        roster = hub["npc_ids"]
+        if not roster:
+            self.status = "Hub roster is empty"
+            return True
+        npc_id   = roster[self.hub_roster_cur]
+        npc_name = next((n["name"] for n in self.npcs if n["id"] == npc_id), f"id={npc_id}")
+        confirm  = self._prompt(f"Remove '{npc_name}' from hub? (y/N):", "N")
+        if confirm.lower() != 'y':
+            return True
+        self.hubs_data["hubs"], self.status = hub_remove_npc(hubs, self.hub_cur, self.hub_roster_cur)
+        self._save_hubs()
+        new_len = len(self.hubs_data["hubs"][self.hub_cur]["npc_ids"])
+        self.hub_roster_cur = min(self.hub_roster_cur, max(new_len - 1, 0))
+        return True
+
     def handle_key(self, key):
         ch = chr(key) if 0 < key < 256 else None
         if ch == '\t':
