@@ -111,7 +111,8 @@ void player_render(void) BANKED {
     uint8_t hw_x    = (uint8_t)(px + 8u);
     uint8_t hw_y    = (uint8_t)((int16_t)py - (int16_t)cam_y + 16);
     uint8_t tile_top = DIR_TILE_TOP[player_dir];
-    uint8_t flip     = DIR_FLIPX[player_dir] ? S_FLIPX : 0u;
+    uint8_t flip     = (DIR_FLIPX[player_dir] ? S_FLIPX : 0u)
+                     | (player_dir == DIR_B   ? S_FLIPY : 0u);
 
     set_sprite_tile(player_sprite_slot,     tile_top);
     set_sprite_tile(player_sprite_slot_bot, (uint8_t)(tile_top + 1u));
