@@ -125,6 +125,58 @@ def renumber_refs(nodes, deleted_idx):
         node["next"] = new_nexts
 
 
+# ── Hub data helpers ──────────────────────────────────────────────────────────
+
+def unassigned_npcs(npcs, hub_npc_ids):
+    """Return list of NPC dicts whose id is NOT in hub_npc_ids."""
+    assigned = set(hub_npc_ids)
+    return [n for n in npcs if n["id"] not in assigned]
+
+
+def next_hub_id(hubs):
+    """Return the next available hub id (max existing + 1, or 0 if empty)."""
+    if not hubs:
+        return 0
+    return max(h["id"] for h in hubs) + 1
+
+
+def hub_add_npc(hubs, hub_idx, npc_id):
+    """Add npc_id to hubs[hub_idx].npc_ids. Returns (hubs, status_str)."""
+    hub = hubs[hub_idx]
+    if npc_id in hub["npc_ids"]:
+        return hubs, "NPC already in hub"
+    hub["npc_ids"].append(npc_id)
+    return hubs, f"Added NPC {npc_id} to {hub['name']}"
+
+
+def hub_remove_npc(hubs, hub_idx, roster_idx):
+    """Remove the NPC at roster_idx from hubs[hub_idx].npc_ids.
+    Returns (hubs, status_str)."""
+    hub = hubs[hub_idx]
+    if not hub["npc_ids"]:
+        return hubs, "Hub roster is empty"
+    if roster_idx < 0 or roster_idx >= len(hub["npc_ids"]):
+        return hubs, f"Roster index {roster_idx} out of range"
+    npc_id = hub["npc_ids"].pop(roster_idx)
+    return hubs, f"Removed NPC {npc_id} from {hub['name']}"
+
+
+def hub_rename(hubs, hub_idx, new_name):
+    """Rename hubs[hub_idx] to new_name (uppercased, max 15 chars).
+    Returns (hubs, status_str)."""
+    name = new_name.upper()[:15]
+    old = hubs[hub_idx]["name"]
+    hubs[hub_idx]["name"] = name
+    return hubs, f"Renamed '{old}' → '{name}'"
+
+
+def hub_delete(hubs, hub_idx):
+    """Delete hubs[hub_idx]. Returns (new_hubs_list, status_str)."""
+    name = hubs[hub_idx]["name"]
+    hubs = [h for i, h in enumerate(hubs) if i != hub_idx]
+    return hubs, f"Deleted hub '{name}'"
+
+
 # ── Editor ───────────────────────────────────────────────────────────────────
 
 class DialogEditor:
