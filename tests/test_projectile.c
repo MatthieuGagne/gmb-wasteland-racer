@@ -14,7 +14,7 @@ void setUp(void) {
     prev_input = 0;
     mock_move_sprite_reset();
     mock_vram_clear();
-    camera_init(88, 648);   /* cam_y = 576; scr(80,80) -> world(72,640) ty=80 tx=9 passable */
+    camera_init(88, 648);   /* cam_y=576; world_y = scr_y+cam_y-16 = 80+576-16=640 ty=80 tx=9 passable */
     sprite_pool_init();     /* reset OAM pool — player_init not called here */
     projectile_init();
 }
@@ -89,8 +89,8 @@ void test_projectile_boundary_despawn_right(void) {
 /* ── wall despawn ─────────────────────────────────────────────────────── */
 
 /* Bullet heading east despawns when destination tile is impassable.
- * With cam_y=576 (from setUp), scr(124,80) → world(116,640) ty=80 tx=14: passable.
- * After one update east (+4): scr(128,80) → world(120,640) ty=80 tx=15: wall (tile=0). */
+ * With cam_y=576 (from setUp): world_y = scr_y+cam_y-16 = 80+576-16 = 640, ty=80.
+ * scr(124,80) → world_x=116 tx=14: passable. After +4 east: world_x=120 tx=15: wall. */
 void test_projectile_wall_despawn(void) {
     projectile_fire(124u, 80u, DIR_R);
     projectile_update();
