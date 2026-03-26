@@ -17,6 +17,8 @@ BANKREF_EXTERN(state_playing)
 #include "projectile.h"
 #include "lap.h"
 
+static uint8_t finish_armed;   /* 1 = ready to detect finish; 0 = debounced */
+
 static void enter(void) {
     int16_t sx = track_get_start_x();
     int16_t sy = track_get_start_y();
@@ -25,6 +27,7 @@ static void enter(void) {
     damage_init();
     projectile_init();
     lap_init(track_get_lap_count());
+    finish_armed = 1u;
     DISPLAY_OFF;
     track_init();
     camera_init(player_get_x(), player_get_y());
@@ -53,21 +56,27 @@ static void update(void) {
         state_replace(&state_game_over);
         return;
     }
-    /* Finish line detection — check must be last so physics runs first */
+    /* Finish line detection:
+     * - tile-type check replaces hardcoded Y-row
+     * - finish_armed debounces: clears on entry, re-arms on exit
+     * - vy > 0 guard: only count when moving downward (prevents AC3 backward crossing) */
     {
-        uint8_t fin_ty = (uint8_t)((uint16_t)player_get_y() >> 3u);
-        if (fin_ty == track_get_finish_ty()) {
-            if (lap_advance()) {
-                /* Final lap complete — return to overmap */
-                state_replace(&state_overmap);
-            } else {
-                /* Lap complete — wrap player to start */
-                player_set_pos(track_get_start_x(), track_get_start_y());
-                player_reset_vel();
-                camera_init(player_get_x(), player_get_y());
+        int16_t px = player_get_x();
+        int16_t py = player_get_y();
+        TileType ct = track_tile_type((int16_t)(px + 4), (int16_t)(py + 4));
+        if (ct == TILE_FINISH) {
+            if (finish_armed && player_get_vy() > 0) {
+                finish_armed = 0u;
+                if (lap_advance()) {
+                    /* Final lap complete — return to overmap */
+                    state_replace(&state_overmap);
+                    return;
+                }
+                /* Lap complete — update HUD; player continues naturally (no teleport) */
                 hud_set_lap(lap_get_current(), lap_get_total());
             }
-            return;
+        } else {
+            finish_armed = 1u;
         }
     }
 }
