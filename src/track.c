@@ -13,7 +13,7 @@ static const uint8_t tile_type_lut[TILE_LUT_LEN] = {
     TILE_SAND,   /* 3: sand */
     TILE_OIL,    /* 4: oil puddle */
     TILE_BOOST,  /* 5: boost pad */
-    TILE_ROAD,   /* 6: finish line visual — passable */
+    TILE_FINISH, /* 6: finish line — triggers lap detection */
     TILE_REPAIR, /* 7: repair pad */
 };
 

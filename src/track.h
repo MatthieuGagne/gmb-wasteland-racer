@@ -13,6 +13,7 @@ typedef uint8_t TileType;
 #define TILE_OIL    3u
 #define TILE_BOOST  4u
 #define TILE_REPAIR 5u
+#define TILE_FINISH 6u
 
 TileType track_tile_type_from_index(uint8_t tile_idx) BANKED;
 TileType track_tile_type(int16_t world_x, int16_t world_y) BANKED;
