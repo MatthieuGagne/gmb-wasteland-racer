@@ -322,6 +322,36 @@ class DialogEditor:
         self.scr.refresh()
         self.status = ""
 
+    def _draw_main_menu(self):
+        self.scr.erase()
+        h, w = self.scr.getmaxyx()
+        title   = "=== DIALOG EDITOR ==="
+        options = [
+            "[1] Hubs",
+            "[2] NPCs",
+            "[q] Quit",
+        ]
+        row = max(0, h // 2 - len(options))
+        cx  = max(0, w // 2 - len(title) // 2)
+        self.scr.addstr(row, cx, title)
+        for i, opt in enumerate(options):
+            ox = max(0, w // 2 - len(opt) // 2)
+            self.scr.addstr(row + 2 + i, ox, opt)
+        self.scr.refresh()
+
+    def _handle_main_menu_key(self, key):
+        ch = chr(key) if 0 < key < 256 else None
+        if ch == '1':
+            self.mode = 'hub_view'
+            self.hub_cur = 0
+            self.hub_focus = 'hubs'
+            self.hub_roster_cur = 0
+        elif ch == '2':
+            self.mode = 'npc_view'
+        elif ch == 'q':
+            return self._quit()
+        return True
+
     def _draw_hub_view(self):
         self.scr.erase()
         h, w = self.scr.getmaxyx()
