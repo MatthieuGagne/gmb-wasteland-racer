@@ -1,7 +1,7 @@
 #include "unity.h"
 #include "music.h"
 
-void setUp(void)    { frame_ready = 0; }
+void setUp(void)    { frame_ready = 0; _current_bank_mock = 0; }
 void tearDown(void) {}
 
 /* vbl_display_off() should consume the frame_ready flag (set it to 0).
