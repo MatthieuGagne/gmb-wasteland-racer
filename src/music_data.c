@@ -7,7 +7,7 @@
 volatile uint8_t __at(2) __bank_music_data_song;
 
 
-static const unsigned char order_cnt = 68;
+static const unsigned char order_cnt = 34;
 
 static const unsigned char P0[] = {
     DN(C_5,1,0x2FF),
