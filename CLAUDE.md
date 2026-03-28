@@ -122,6 +122,21 @@ These live in `.claude/skills/` and take precedence over the global superpowers 
 - **`subagent-driven-development`** — Shadows superpowers:subagent-driven-development; adds worktree hard gate at top; injects bank-pre-write + gbdk-expert into implementer dispatch instructions; adds bank-post-build + gb-memory-validator + smoketest to post-build review step.
 - **`grill-me`** — New skill (adapted from mattpocock/skills); structured interview that stress-tests a plan; covers all 7 GB constraint areas (banking, OAM, WRAM, VRAM, SoA, SDCC, testability); ends with resolved/unresolved summary.
 
+## Debugging Rules
+
+- **Shifted crash ≠ known issue**: If a fix moves a crash from time X to time Y (e.g. 24s → 33s), do NOT treat it as the same known bug. Investigate whether it is a different root cause before closing the loop.
+- **One variable per test**: Never make two changes between test runs. Instrument, build, observe, conclude — one hypothesis at a time.
+- **Worktree CWD**: Before every `make` or emulator launch, verify the current directory is the correct worktree directory (`pwd`). After any worktree cleanup, `cd` to a valid directory before running further commands.
+- **PR navigation**: When the user says "go back again", "next one", or any relative reference during sequential PR testing, state the exact PR number out loud and confirm before doing the checkout.
+
+## PRD vs Implementation Plan
+
+When the user asks for a brainstorm or PRD: stay at the **requirements and design level only**. Do not write implementation details, code snippets, or file-level task breakdowns. If the user wants an implementation plan they will explicitly ask for one.
+
+## Build & Test Rules
+
+- Always use a clean build (`make clean && GBDK_HOME=/home/mathdaman/gbdk make`) when testing historical PRs or comparing versions. Never assume a prior build is still valid.
+
 ## Workflow
 
 This project uses [Superpowers](https://github.com/obra/superpowers) (installed globally in `~/.claude/`).
